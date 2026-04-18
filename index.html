@@ -342,7 +342,7 @@ function doSubmit(){
 }
 
 function inviaFile(reqId, fileData, tipo){
-  var chunkSize = 50000;
+  var chunkSize = 20000;
   var b64 = fileData.base64;
   var chunks = [];
   for(var i=0;i<b64.length;i+=chunkSize) chunks.push(b64.substring(i,i+chunkSize));
