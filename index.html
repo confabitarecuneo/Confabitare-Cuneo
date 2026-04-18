@@ -311,61 +311,62 @@ function doSubmit(){
     contratto:{arredamento:{idx:cs.a,label:aL[cs.a]},durata:{idx:cs.d,label:dL[cs.d]},recesso:{idx:cs.r,label:rL[cs.r]}},
     catastale:cat,allegati:Object.values(all),stato:'in attesa'
   };
+
+  // Versione senza file per primo invio
+  var rTxt=JSON.parse(JSON.stringify(r));
+  rTxt.catastale={name:cat.name,type:cat.type,base64:''};
+  rTxt.allegati=Object.values(all).map(function(a){return{name:a.name,type:a.type,label:a.label,base64:''};});
+
   var btn=document.querySelector('.btn-submit');
   btn.textContent='Invio in corso...';btn.disabled=true;
-  
-  // Invia prima i dati testuali SENZA il file (troppo grande per URL)
-  var rSenzaFile = JSON.parse(JSON.stringify(r));
-  rSenzaFile.catastale = {name: r.catastale.name, type: r.catastale.type, base64: ''}; // solo metadati
-  rSenzaFile.allegati = r.allegati.map(function(a){ return {name:a.name,type:a.type,label:a.label,base64:''}; });
 
   var cb='cb'+Date.now();
   window[cb]=function(data){
     delete window[cb];
     var s=document.getElementById('s_'+cb);if(s)s.remove();
-    btn.textContent='Invia Richiesta →';btn.disabled=false;
     if(data&&data.ok){
-      // Invia catastale e allegati facoltativi in sequenza
-      var files = [];
-      if(r.catastale && r.catastale.base64) files.push({file: r.catastale, tipo: 'catastale'});
-      r.allegati.forEach(function(a){ if(a.base64) files.push({file:a, tipo:'allegato'}); });
-      files.forEach(function(f){ inviaFile(r.id, f.file, f.tipo); });
-      document.getElementById('formContainer').style.display='none';
-      document.getElementById('successScreen').style.display='block';
-      document.getElementById('refCode').textContent='Codice: '+r.id;
-    }else{alert('Errore: '+(data?data.error:'nessuna risposta'));}
+      var files=[];
+      if(cat&&cat.base64) files.push({file:cat,tipo:'catastale'});
+      Object.values(all).forEach(function(a){if(a.base64)files.push({file:a,tipo:'allegato'});});
+      if(files.length===0){
+        mostraOk(r.id,btn);
+      } else {
+        btn.textContent='Caricamento file 1/'+files.length+'...';
+        inviaSeq(r.id,files,0,btn);
+      }
+    }else{btn.textContent='Invia Richiesta →';btn.disabled=false;alert('Errore: '+(data?data.error:'nessuna risposta'));}
   };
   setTimeout(function(){if(window[cb]){delete window[cb];btn.textContent='Invia Richiesta →';btn.disabled=false;alert('Timeout. Riprova.');}},15000);
   var sc=document.createElement('script');sc.id='s_'+cb;
-  sc.src=URL_GAS+'?callback='+cb+'&payload='+encodeURIComponent(JSON.stringify({action:'nuova',richiesta:rSenzaFile}));
+  sc.src=URL_GAS+'?callback='+cb+'&payload='+encodeURIComponent(JSON.stringify({action:'nuova',richiesta:rTxt}));
   document.head.appendChild(sc);
 }
 
-function inviaFile(reqId, fileData, tipo){
-  var chunkSize = 20000;
-  var b64 = fileData.base64;
-  var chunks = [];
-  for(var i=0;i<b64.length;i+=chunkSize) chunks.push(b64.substring(i,i+chunkSize));
-  var total = chunks.length;
-  var action = tipo === 'catastale' ? 'fileChunk' : 'allegaChunk';
+function mostraOk(id,btn){
+  btn.textContent='Invia Richiesta →';btn.disabled=false;
+  document.getElementById('formContainer').style.display='none';
+  document.getElementById('successScreen').style.display='block';
+  document.getElementById('refCode').textContent='Codice: '+id;
+}
 
-  function inviaChunk(idx){
-    if(idx >= total) return;
-    var cb='fc'+Date.now()+'_'+idx;
-    window[cb]=function(data){
-      delete window[cb];
-      var s=document.getElementById('s_'+cb);if(s)s.remove();
-      inviaChunk(idx+1);
-    };
-    setTimeout(function(){if(window[cb])delete window[cb];},10000);
+function inviaSeq(reqId,files,idx,btn){
+  if(idx>=files.length){mostraOk(reqId,btn);return;}
+  btn.textContent='Caricamento file '+(idx+1)+'/'+files.length+'...';
+  var f=files[idx],cs=20000,b64=f.file.base64,chunks=[],i;
+  for(i=0;i<b64.length;i+=cs) chunks.push(b64.substring(i,i+cs));
+  var action=f.tipo==='catastale'?'fileChunk':'allegaChunk';
+  function chunk(n){
+    if(n>=chunks.length){inviaSeq(reqId,files,idx+1,btn);return;}
+    var cb='ck'+Date.now()+'_'+n;
+    window[cb]=function(){delete window[cb];var s=document.getElementById('s_'+cb);if(s)s.remove();chunk(n+1);};
+    setTimeout(function(){if(window[cb]){delete window[cb];chunk(n+1);}},15000);
     var sc=document.createElement('script');sc.id='s_'+cb;
     sc.src=URL_GAS+'?callback='+cb+'&payload='+encodeURIComponent(JSON.stringify({
-      action:action, reqId:reqId, name:fileData.name, type:fileData.type,
-      chunk:idx, total:total, data:chunks[idx]
+      action:action,reqId:reqId,name:f.file.name,type:f.file.type,chunk:n,total:chunks.length,data:chunks[n]
     }));
     document.head.appendChild(sc);
   }
-  inviaChunk(0);
+  chunk(0);
 }
 
 function doTest(){
