@@ -1829,8 +1829,7 @@ function renderRichieste(list, richieste, fromCache) {
         ${r.contratto ? `<br>Arredamento: ${r.contratto.arredamento.label} · Durata: ${r.contratto.durata.label} · Recesso: ${r.contratto.recesso.label}` : ''}
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
-        ${r.catastale && r.catastale.base64 ? `<button onclick="scaricaFile('${r.catastale.base64}','${r.catastale.name}')" style="background:#dbeafe;border:1px solid #93c5fd;color:#1d4ed8;border-radius:4px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:'DM Mono',monospace">📄 Scheda catastale</button>` : ''}
-        ${(r.allegati||[]).map(a => `<button onclick="scaricaFile('${a.base64}','${a.name}')" style="background:#f0fdf4;border:1px solid #86efac;color:#166534;border-radius:4px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:'DM Mono',monospace">📎 ${a.name}</button>`).join('')}
+        ${r.driveUrl ? `<a href="${r.driveUrl}" target="_blank" style="display:inline-block;background:#dbeafe;border:1px solid #93c5fd;color:#1d4ed8;border-radius:4px;padding:5px 14px;font-size:11px;font-family:'DM Mono',monospace;text-decoration:none">📁 Apri cartella documenti</a>` : '<span style="font-size:11px;color:#94a3b8">Nessun documento allegato</span>'}
       </div>
       <button onclick='caricaRichiesta(${JSON.stringify(r).replace(/'/g,"&#39;")})' style="background:#1a2332;color:white;border:none;border-radius:4px;padding:7px 14px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;text-transform:uppercase">Carica nel calcolatore →</button>
       <button onclick="eliminaRichiesta('${r.id}')" style="background:none;border:1px solid #fca5a5;color:#dc2626;border-radius:4px;padding:7px 14px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;margin-left:6px">Elimina</button>
