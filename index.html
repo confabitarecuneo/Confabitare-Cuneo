@@ -322,11 +322,15 @@ function doSubmit(){
   document.head.appendChild(sc);
 }
 
-function mostraOk(id,btn){
+function mostraOk(id,btn,driveUrl){
   btn.textContent='Invia Richiesta →';btn.disabled=false;
   document.getElementById('formContainer').style.display='none';
   document.getElementById('successScreen').style.display='block';
   document.getElementById('refCode').textContent='Codice: '+id;
+  if(driveUrl){
+    document.getElementById('driveBlock').style.display='block';
+    document.getElementById('driveLink').href=driveUrl;
+  }
 }
 
 function inviaSeq(reqId,files,idx,btn){
