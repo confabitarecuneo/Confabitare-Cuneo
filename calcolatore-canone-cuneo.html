@@ -673,7 +673,7 @@
         </div>
         <div class="field">
           <label>Indirizzo</label>
-          <input type="text" id="indirizzo" placeholder="Via, numero civico">
+          <input type="text" id="indirizzo" placeholder="Via, numero civico" oninput="aggiornaLinkMappa()">
         </div>
         <div class="field">
           <label>Zona di ubicazione</label>
@@ -691,6 +691,16 @@
         </div>
       </div>
       <div class="zone-info" id="zoneInfo"></div>
+
+      <!-- Link mappa zone -->
+      <div style="margin-top:12px;padding:12px 16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px">
+        <div style="font-size:12px;color:#0369a1;margin-bottom:8px">🗺️ Strumenti mappa per identificare la zona</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <a id="linkMappa" href="https://www.google.com/maps/search/Cuneo+CN" target="_blank" style="background:#0369a1;color:white;padding:7px 14px;border-radius:4px;text-decoration:none;font-family:'DM Mono',monospace;font-size:11px">📍 Cerca indirizzo su Google Maps</a>
+          <a href="https://www.google.com/maps/d/viewer?mid=1pTIpzhBH_DxsX1xAv6RguWEiY7-VtcRg" target="_blank" style="background:#059669;color:white;padding:7px 14px;border-radius:4px;text-decoration:none;font-family:'DM Mono',monospace;font-size:11px">🗺️ Apri mappa delle zone</a>
+        </div>
+        <p style="font-size:11px;color:#0369a1;margin-top:8px">1. Cerca l'indirizzo su Google Maps per localizzarlo · 2. Apri la mappa delle zone per vedere a quale zona appartiene</p>
+      </div>
 
       <hr class="divider">
 
@@ -1161,6 +1171,17 @@ function selectRadio(group, idx, val) {
   if (group === 'durata') scostDurata = val;
   if (group === 'recesso') scostRecesso = val;
   computeResult();
+}
+
+function aggiornaLinkMappa() {
+  const indirizzo = document.getElementById('indirizzo').value.trim();
+  const link = document.getElementById('linkMappa');
+  const linkZone = document.getElementById('linkZone');
+  if (indirizzo) {
+    link.href = 'https://www.google.com/maps/search/' + encodeURIComponent(indirizzo + ', Cuneo CN, Italia');
+  } else {
+    link.href = 'https://www.google.com/maps/search/Cuneo+CN';
+  }
 }
 
 function onZoneChange() {
