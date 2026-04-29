@@ -750,71 +750,15 @@
             <th>Sup. rettificata</th>
           </tr>
         </thead>
-        <tbody id="tbodySuperifici">
+        <tbody>
           <tr>
             <td>Abitazione principale (SIN)</td>
             <td style="text-align:center"><span class="coeff" id="coeffSin">—</span></td>
             <td><input type="number" id="supSin" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td>
             <td class="result" id="resSin">0.00</td>
           </tr>
-          <tr id="rowGar12" style="display:none">
-            <td>Autorimessa singola C/6 (zone 1-2)</td>
-            <td style="text-align:center"><span class="coeff">0.70</span></td>
-            <td><input type="number" id="supGar12" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td>
-            <td class="result" id="resGar12">0.00</td>
-          </tr>
-          <tr id="rowGar345" style="display:none">
-            <td>Autorimessa singola C/6 (zone 3-4-5)</td>
-            <td style="text-align:center"><span class="coeff">0.60</span></td>
-            <td><input type="number" id="supGar345" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td>
-            <td class="result" id="resGar345">0.00</td>
-          </tr>
-          <tr id="rowGarOther" style="display:none">
-            <td>Autorimessa singola C/6 (altre zone)</td>
-            <td style="text-align:center"><span class="coeff">0.50</span></td>
-            <td><input type="number" id="supGarOther" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td>
-            <td class="result" id="resGarOther">0.00</td>
-          </tr>
-          <tr>
-            <td>Autorimessa comune</td>
-            <td style="text-align:center"><span class="coeff">0.20</span></td>
-            <td><input type="number" id="supGarCom" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td>
-            <td class="result" id="resGarCom">0.00</td>
-          </tr>
-          <tr>
-            <td>Cantina</td>
-            <td style="text-align:center"><span class="coeff">0.25</span></td>
-            <td><input type="number" id="supCantina" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td>
-            <td class="result" id="resCantina">0.00</td>
-          </tr>
-          <tr>
-            <td>Balcone</td>
-            <td style="text-align:center"><span class="coeff">0.25</span></td>
-            <td><input type="number" id="supBalcone" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td>
-            <td class="result" id="resBalcone">0.00</td>
-          </tr>
-          <tr>
-            <td>Solaio</td>
-            <td style="text-align:center"><span class="coeff">0.25</span></td>
-            <td><input type="number" id="supSolaio" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td>
-            <td class="result" id="resSolaio">0.00</td>
-          </tr>
-          <tr>
-            <td>Terrazzo</td>
-            <td style="text-align:center"><span class="coeff">0.25</span></td>
-            <td><input type="number" id="supTerrazzo" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td>
-            <td class="result" id="resTerrazzo">0.00</td>
-          </tr>
-          <tr>
-            <td>Area esterna di pertinenza esclusiva</td>
-            <td style="text-align:center"><span class="coeff">0.15</span></td>
-            <td><input type="number" id="supArea" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td>
-            <td class="result" id="resArea">0.00</td>
-          </tr>
-          <tr class="total-row">
-            <td colspan="3">TOTALE SUPERFICIE CONVENZIONALE</td>
-            <td class="result" id="totSup" style="font-size:15px;color:var(--accent)">0.00 mq</td>
-          </tr>
+        </tbody>
+        <tbody id="tbodySuperifici">
         </tbody>
       </table>
     </div>
@@ -2019,6 +1963,14 @@ function aggiornaTabellaSuperifici(citta) {
   const tbody = document.getElementById('tbodySuperifici');
   if (!tbody) return;
 
+  const righeComuni = `
+      <tr><td>Cantina</td><td style="text-align:center"><span class="coeff">0.25</span></td><td><input type="number" id="supCantina" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resCantina" style="text-align:right">0.00</td></tr>
+      <tr><td>Balconi</td><td style="text-align:center"><span class="coeff">0.25</span></td><td><input type="number" id="supBalcone" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resBalcone" style="text-align:right">0.00</td></tr>
+      <tr><td>Solaio</td><td style="text-align:center"><span class="coeff">0.25</span></td><td><input type="number" id="supSolaio" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resSolaio" style="text-align:right">0.00</td></tr>
+      <tr><td>Terrazzi</td><td style="text-align:center"><span class="coeff">0.25</span></td><td><input type="number" id="supTerrazzo" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resTerrazzo" style="text-align:right">0.00</td></tr>
+      <tr><td>Area esterna di pertinenza esclusiva</td><td style="text-align:center"><span class="coeff">0.15</span></td><td><input type="number" id="supArea" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resArea" style="text-align:right">0.00</td></tr>
+      <tr class="total-row"><td colspan="3">TOTALE SUPERFICIE CONVENZIONALE</td><td class="result" id="totSup" style="font-size:15px;color:var(--accent)">0.00 mq</td></tr>`;
+
   if (citta === 'ALBA') {
     tbody.innerHTML = `
       <tr id="rowGar1"><td>Autorimessa singola (Zona 1)</td><td style="text-align:center"><span class="coeff">0.80</span></td><td><input type="number" id="supGar1" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGar1" style="text-align:right">0.00</td></tr>
@@ -2029,13 +1981,15 @@ function aggiornaTabellaSuperifici(citta) {
       <tr id="rowPCopOther"><td>Posto auto coperto esclusivo (altre zone)</td><td style="text-align:center"><span class="coeff">0.30</span></td><td><input type="number" id="supPCopOther" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resPCopOther" style="text-align:right">0.00</td></tr>
       <tr id="rowPSco1"><td>Posto auto scoperto esclusivo (Zona 1)</td><td style="text-align:center"><span class="coeff">0.35</span></td><td><input type="number" id="supPSco1" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resPSco1" style="text-align:right">0.00</td></tr>
       <tr id="rowPSco2"><td>Posto auto scoperto esclusivo (Zona 2)</td><td style="text-align:center"><span class="coeff">0.30</span></td><td><input type="number" id="supPSco2" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resPSco2" style="text-align:right">0.00</td></tr>
-      <tr id="rowPScoOther"><td>Posto auto scoperto esclusivo (altre zone)</td><td style="text-align:center"><span class="coeff">0.25</span></td><td><input type="number" id="supPScoOther" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resPScoOther" style="text-align:right">0.00</td></tr>`;
+      <tr id="rowPScoOther"><td>Posto auto scoperto esclusivo (altre zone)</td><td style="text-align:center"><span class="coeff">0.25</span></td><td><input type="number" id="supPScoOther" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resPScoOther" style="text-align:right">0.00</td></tr>
+      ${righeComuni}`;
   } else {
     tbody.innerHTML = `
       <tr id="rowGar12"><td>Autorimessa singola C/6 (zone 1-2)</td><td style="text-align:center"><span class="coeff">0.70</span></td><td><input type="number" id="supGar12" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGar12" style="text-align:right">0.00</td></tr>
       <tr id="rowGar345"><td>Autorimessa singola C/6 (zone 3-4-5)</td><td style="text-align:center"><span class="coeff">0.60</span></td><td><input type="number" id="supGar345" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGar345" style="text-align:right">0.00</td></tr>
       <tr id="rowGarOther"><td>Autorimessa singola C/6 (altre zone)</td><td style="text-align:center"><span class="coeff">0.50</span></td><td><input type="number" id="supGarOther" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGarOther" style="text-align:right">0.00</td></tr>
-      <tr id="rowGarCom"><td>Autorimessa comune</td><td style="text-align:center"><span class="coeff">0.20</span></td><td><input type="number" id="supGarCom" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGarCom" style="text-align:right">0.00</td></tr>`;
+      <tr id="rowGarCom"><td>Autorimessa comune</td><td style="text-align:center"><span class="coeff">0.20</span></td><td><input type="number" id="supGarCom" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGarCom" style="text-align:right">0.00</td></tr>
+      ${righeComuni}`;
   }
 }
 
