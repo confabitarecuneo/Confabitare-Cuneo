@@ -1248,7 +1248,7 @@ function getSin(sup) {
   return { coeff: '0.90', rett: Math.max(sup * 0.9, 120) };
 }
 
-function getV(id) { return parseFloat(document.getElementById(id).value) || 0; }
+function getV(id) { const el = document.getElementById(id); return el ? (parseFloat(el.value) || 0) : 0; }
 function fmt(n) { return n.toFixed(2); }
 
 function calc() {
