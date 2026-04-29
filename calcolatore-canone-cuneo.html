@@ -1883,6 +1883,11 @@ function renderRichieste(list, richieste, fromCache) {
     list.innerHTML = '<p style="color:#64748b;font-size:13px;text-align:center;padding:32px 0">Nessuna richiesta ricevuta</p>';
     return;
   }
+
+  // Salva le richieste in un oggetto globale per accesso sicuro
+  window._richiesteCache = {};
+  richieste.forEach(r => { window._richiesteCache[r.id] = r; });
+
   const cacheNote = fromCache ? '<div style="background:#fef3c7;padding:8px 12px;border-radius:4px;font-size:11px;color:#92400e;margin-bottom:12px">⚠️ Dati dalla cache locale — connessione a Sheets non disponibile</div>' : '';
   list.innerHTML = cacheNote + richieste.slice().reverse().map(r => `
     <div style="border:1px solid #e2e8f0;border-radius:6px;padding:16px;margin-bottom:12px;background:#f8fafc">
@@ -1901,10 +1906,16 @@ function renderRichieste(list, richieste, fromCache) {
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
         ${r.driveUrl ? `<a href="${r.driveUrl}" target="_blank" style="display:inline-block;background:#dbeafe;border:1px solid #93c5fd;color:#1d4ed8;border-radius:4px;padding:5px 14px;font-size:11px;font-family:'DM Mono',monospace;text-decoration:none">📁 Apri cartella documenti</a>` : '<span style="font-size:11px;color:#94a3b8">Nessun documento allegato</span>'}
       </div>
-      <button onclick='caricaRichiesta(${JSON.stringify(r).replace(/'/g,"&#39;")})' style="background:#1a2332;color:white;border:none;border-radius:4px;padding:7px 14px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;text-transform:uppercase">Carica nel calcolatore →</button>
+      <button onclick="caricaRichiestaById('${r.id}')" style="background:#1a2332;color:white;border:none;border-radius:4px;padding:7px 14px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;text-transform:uppercase">Carica nel calcolatore →</button>
       <button onclick="eliminaRichiesta('${r.id}')" style="background:none;border:1px solid #fca5a5;color:#dc2626;border-radius:4px;padding:7px 14px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;margin-left:6px">Elimina</button>
     </div>
   `).join('');
+}
+
+function caricaRichiestaById(id) {
+  const r = window._richiesteCache && window._richiesteCache[id];
+  if (!r) { alert('Richiesta non trovata. Ricarica le richieste.'); return; }
+  caricaRichiesta(r);
 }
 
 function impostaCitta(citta) {
