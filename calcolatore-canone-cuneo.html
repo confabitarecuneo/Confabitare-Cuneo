@@ -750,7 +750,7 @@
             <th>Sup. rettificata</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="tbodySuperifici">
           <tr>
             <td>Abitazione principale (SIN)</td>
             <td style="text-align:center"><span class="coeff" id="coeffSin">—</span></td>
@@ -1084,7 +1084,9 @@
 <script>
 // Zone data — due valori per fascia (banda minima e massima della fascia)
 // FASCIA MINIMA: < 5 elementi | FASCIA MEDIA: 6–9 elementi | FASCIA MASSIMA: ≥ 10 elementi
-const ZONE = {
+
+// ---- CUNEO ----
+const ZONE_CUNEO = {
   1: { desc: "Piazza Galimberti e Via Roma n. civici",                                                         min:[3.92,4.02], osc:[4.88,4.98], max:[5.84,5.94] },
   2: { desc: "Centro storico tra C.so Kennedy e C.so Papa Giovanni XIII + area Basse S. Anna e discesa Bellavista", min:[3.47,3.57], osc:[4.33,4.43], max:[5.18,5.28] },
   3: { desc: "C.so Soleri, P.zza Galimberti, C.so Garibaldi fino a C.so Ferraris e C.so Vitt. Emanuele II + n. civici di C.so Nizza alta", min:[3.62,3.72], osc:[4.49,4.59], max:[5.35,5.45] },
@@ -1094,6 +1096,21 @@ const ZONE = {
   7: { desc: "Madonna Olmo, Confreria, Borgo S. Giuseppe, Madonna Grazie",                                     min:[3.01,3.11], osc:[3.75,3.85], max:[4.49,4.59] },
   8: { desc: "Altre frazioni e zona agricola",                                                                  min:[2.87,2.97], osc:[3.57,3.67], max:[4.27,4.37] }
 };
+
+// ---- ALBA ----
+const ZONE_ALBA = {
+  1: { desc: "Zona 1 — Centro storico e aree centrali",          min:[3.92,4.02], osc:[5.53,5.63], max:[7.90,8.00] },
+  2: { desc: "Zona 2 — Semicentro",                              min:[3.70,3.80], osc:[4.95,5.05], max:[7.11,7.21] },
+  3: { desc: "Zona 3 — Zona residenziale",                       min:[3.32,3.42], osc:[4.45,4.55], max:[6.39,6.49] },
+  4: { desc: "Zona 4 — Periferia urbana",                        min:[2.97,3.07], osc:[4.01,4.11], max:[5.76,5.86] },
+  5: { desc: "Zona 5 — Frazioni principali",                     min:[2.69,2.79], osc:[3.60,3.70], max:[5.16,5.26] },
+  6: { desc: "Zona 6 — Frazioni periferiche e zona agricola",    min:[2.40,2.50], osc:[3.22,3.32], max:[4.65,4.75] }
+};
+
+// Città attiva (default Cuneo)
+let CITTA = 'CUNEO';
+let ZONE  = ZONE_CUNEO;
+const CANONE_MAX_ALBA = 600; // tetto mensile Alba
 
 // Fascia determinata dal totale elementi (parametri presenti)
 // MINIMA: < 5 | MEDIA: 6–9 | MASSIMA: ≥ 10
@@ -1240,27 +1257,44 @@ function calc() {
   document.getElementById('coeffSin').textContent = sinResult.coeff;
   document.getElementById('resSin').textContent = fmt(sinResult.rett);
 
-  const gar12 = getV('supGar12') * 0.7;
-  const gar345 = getV('supGar345') * 0.6;
-  const garOther = getV('supGarOther') * 0.5;
-  const garCom = getV('supGarCom') * 0.2;
-  const cantina = getV('supCantina') * 0.25;
-  const balcone = getV('supBalcone') * 0.25;
-  const solaio = getV('supSolaio') * 0.25;
+  let garTot = 0;
+  if (CITTA === 'ALBA') {
+    const gar1     = getV('supGar1')     * 0.80;
+    const gar2     = getV('supGar2')     * 0.65;
+    const garOther = getV('supGarOther') * 0.50;
+    const pCop1    = getV('supPCop1')    * 0.50;
+    const pCop2    = getV('supPCop2')    * 0.40;
+    const pCopOther= getV('supPCopOther')* 0.30;
+    const pSco1    = getV('supPSco1')    * 0.35;
+    const pSco2    = getV('supPSco2')    * 0.30;
+    const pScoOther= getV('supPScoOther')* 0.25;
+    garTot = gar1+gar2+garOther+pCop1+pCop2+pCopOther+pSco1+pSco2+pScoOther;
+    const setR = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=fmt(v); };
+    setR('resGar1',gar1); setR('resGar2',gar2); setR('resGarOther',garOther);
+    setR('resPCop1',pCop1); setR('resPCop2',pCop2); setR('resPCopOther',pCopOther);
+    setR('resPSco1',pSco1); setR('resPSco2',pSco2); setR('resPScoOther',pScoOther);
+  } else {
+    const gar12    = getV('supGar12')    * 0.7;
+    const gar345   = getV('supGar345')   * 0.6;
+    const garOther = getV('supGarOther') * 0.5;
+    const garCom   = getV('supGarCom')   * 0.2;
+    garTot = gar12+gar345+garOther+garCom;
+    const setR = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=fmt(v); };
+    setR('resGar12',gar12); setR('resGar345',gar345);
+    setR('resGarOther',garOther); setR('resGarCom',garCom);
+  }
+
+  const cantina  = getV('supCantina')  * 0.25;
+  const balcone  = getV('supBalcone')  * 0.25;
+  const solaio   = getV('supSolaio')   * 0.25;
   const terrazzo = getV('supTerrazzo') * 0.25;
-  const area = getV('supArea') * 0.15;
+  const area     = getV('supArea')     * 0.15;
 
-  document.getElementById('resGar12').textContent = fmt(gar12);
-  document.getElementById('resGar345').textContent = fmt(gar345);
-  document.getElementById('resGarOther').textContent = fmt(garOther);
-  document.getElementById('resGarCom').textContent = fmt(garCom);
-  document.getElementById('resCantina').textContent = fmt(cantina);
-  document.getElementById('resBalcone').textContent = fmt(balcone);
-  document.getElementById('resSolaio').textContent = fmt(solaio);
-  document.getElementById('resTerrazzo').textContent = fmt(terrazzo);
-  document.getElementById('resArea').textContent = fmt(area);
+  const setR2 = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=fmt(v); };
+  setR2('resCantina',cantina); setR2('resBalcone',balcone);
+  setR2('resSolaio',solaio);   setR2('resTerrazzo',terrazzo); setR2('resArea',area);
 
-  const tot = sinResult.rett + gar12 + gar345 + garOther + garCom + cantina + balcone + solaio + terrazzo + area;
+  const tot = sinResult.rett + garTot + cantina + balcone + solaio + terrazzo + area;
   document.getElementById('totSup').textContent = fmt(tot) + ' mq';
 
   // params total
@@ -1388,8 +1422,16 @@ function computeResult() {
 
   const supSin = getV('supSin');
   const sinR = getSin(supSin);
-  const tot = sinR.rett + getV('supGar12')*0.7 + getV('supGar345')*0.6 + getV('supGarOther')*0.5
-    + getV('supGarCom')*0.2 + getV('supCantina')*0.25 + getV('supBalcone')*0.25
+  const sinR2 = getSin(getV('supSin'));
+  let garTot2 = 0;
+  if (CITTA === 'ALBA') {
+    garTot2 = getV('supGar1')*0.80 + getV('supGar2')*0.65 + getV('supGarOther')*0.50
+      + getV('supPCop1')*0.50 + getV('supPCop2')*0.40 + getV('supPCopOther')*0.30
+      + getV('supPSco1')*0.35 + getV('supPSco2')*0.30 + getV('supPScoOther')*0.25;
+  } else {
+    garTot2 = getV('supGar12')*0.7 + getV('supGar345')*0.6 + getV('supGarOther')*0.5 + getV('supGarCom')*0.2;
+  }
+  const tot = sinR2.rett + garTot2 + getV('supCantina')*0.25 + getV('supBalcone')*0.25
     + getV('supSolaio')*0.25 + getV('supTerrazzo')*0.25 + getV('supArea')*0.15;
 
   const totalP = PARAMS.reduce((s, p, i) => s + (paramsChecked[i] ? p.pts : 0), 0);
@@ -1409,7 +1451,14 @@ function computeResult() {
   const mqBase     = valoreSceltoBanda.val;
   const totalScost = scostArredamento + scostDurata + scostRecesso;
   const canoneBase = Math.round(mqBase * tot * 100) / 100;
-  const canoneFin  = Math.round(canoneBase * (1 + totalScost) * 100) / 100;
+  let   canoneFin  = Math.round(canoneBase * (1 + totalScost) * 100) / 100;
+
+  // Tetto massimo Alba: 600€/mese
+  let noteTetto = '';
+  if (CITTA === 'ALBA' && canoneFin > CANONE_MAX_ALBA) {
+    canoneFin = CANONE_MAX_ALBA;
+    noteTetto = ` ⚠️ Tetto massimo Alba: €${CANONE_MAX_ALBA}/mese applicato`;
+  }
 
   const fasciaColor = fascia === 'MINIMA' ? '#6ee7b7' : fascia === 'MEDIA' ? '#fbbf24' : '#fca5a5';
   const attestazione = fascia === 'MEDIA' ? 'attestazione unilaterale' : 'attestazione bilaterale';
@@ -1417,7 +1466,7 @@ function computeResult() {
   amountEl.textContent = '€ ' + canoneFin.toFixed(2);
   fasciaEl.innerHTML   = `Fascia <strong style="color:${fasciaColor}">${fascia}</strong> · ${mqBase.toFixed(2)} €/mq × ${fmt(tot)} mq` +
     (totalScost > 0 ? ` + ${(totalScost*100).toFixed(0)}% scostamenti` : '');
-  noteEl.textContent   = attestazione;
+  noteEl.textContent   = attestazione + noteTetto;
 }
 
 function updateCanoneBase() {
@@ -1858,8 +1907,85 @@ function renderRichieste(list, richieste, fromCache) {
   `).join('');
 }
 
-function caricaRichiesta(r) {
+function impostaCitta(citta) {
+  CITTA = citta;
+  ZONE  = citta === 'ALBA' ? ZONE_ALBA : ZONE_CUNEO;
+
+  // Aggiorna badge città nell'header
+  let badge = document.getElementById('cittaBadge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'cittaBadge';
+    badge.style.cssText = 'position:fixed;top:12px;right:80px;z-index:9999;padding:4px 12px;border-radius:12px;font-family:DM Mono,monospace;font-size:11px;font-weight:700;letter-spacing:.05em';
+    document.body.appendChild(badge);
+  }
+  if (citta === 'ALBA') {
+    badge.textContent = '🏙️ ALBA';
+    badge.style.background = '#fef3c7';
+    badge.style.color = '#92400e';
+    badge.style.border = '1px solid #fde68a';
+  } else {
+    badge.textContent = '🏙️ CUNEO';
+    badge.style.background = '#dbeafe';
+    badge.style.color = '#1e40af';
+    badge.style.border = '1px solid #93c5fd';
+  }
+
+  // Aggiorna select zona
+  const zonaEl = document.getElementById('zona');
+  if (zonaEl) {
+    const nZone = citta === 'ALBA' ? 6 : 8;
+    zonaEl.innerHTML = '<option value="">— Seleziona zona —</option>';
+    for (let i = 1; i <= nZone; i++) {
+      zonaEl.innerHTML += `<option value="${i}">Zona ${i}</option>`;
+    }
+  }
+
+  // Aggiorna righe tabella superfici per garage
+  // Alba ha: gar zona1 (0.8), gar zona2 (0.65), gar altre (0.5)
+  //          posto coperto zona1 (0.5), zona2 (0.4), altre (0.3)
+  //          posto scoperto zona1 (0.35), zona2 (0.3), altre (0.25)
+  // Cuneo ha: gar zone1-2 (0.7), gar zone3-4-5 (0.6), gar altre (0.5), gar comune (0.2)
+  aggiornaTabellaSuperifici(citta);
+
+  // Reset zona e ricalcola
+  document.getElementById('zona').value = '';
+  calc();
+  updateFasciaInfo();
+}
+
+function aggiornaTabellaSuperifici(citta) {
+  const tbody = document.getElementById('tbodySuperifici');
+  if (!tbody) return;
+
+  if (citta === 'ALBA') {
+    tbody.innerHTML = `
+      <tr id="rowGar1"><td>Autorimessa singola (Zona 1)</td><td style="text-align:center"><span class="coeff">0.80</span></td><td><input type="number" id="supGar1" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGar1" style="text-align:right">0.00</td></tr>
+      <tr id="rowGar2"><td>Autorimessa singola (Zona 2)</td><td style="text-align:center"><span class="coeff">0.65</span></td><td><input type="number" id="supGar2" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGar2" style="text-align:right">0.00</td></tr>
+      <tr id="rowGarOther"><td>Autorimessa singola (altre zone)</td><td style="text-align:center"><span class="coeff">0.50</span></td><td><input type="number" id="supGarOther" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGarOther" style="text-align:right">0.00</td></tr>
+      <tr id="rowPCop1"><td>Posto auto coperto esclusivo (Zona 1)</td><td style="text-align:center"><span class="coeff">0.50</span></td><td><input type="number" id="supPCop1" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resPCop1" style="text-align:right">0.00</td></tr>
+      <tr id="rowPCop2"><td>Posto auto coperto esclusivo (Zona 2)</td><td style="text-align:center"><span class="coeff">0.40</span></td><td><input type="number" id="supPCop2" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resPCop2" style="text-align:right">0.00</td></tr>
+      <tr id="rowPCopOther"><td>Posto auto coperto esclusivo (altre zone)</td><td style="text-align:center"><span class="coeff">0.30</span></td><td><input type="number" id="supPCopOther" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resPCopOther" style="text-align:right">0.00</td></tr>
+      <tr id="rowPSco1"><td>Posto auto scoperto esclusivo (Zona 1)</td><td style="text-align:center"><span class="coeff">0.35</span></td><td><input type="number" id="supPSco1" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resPSco1" style="text-align:right">0.00</td></tr>
+      <tr id="rowPSco2"><td>Posto auto scoperto esclusivo (Zona 2)</td><td style="text-align:center"><span class="coeff">0.30</span></td><td><input type="number" id="supPSco2" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resPSco2" style="text-align:right">0.00</td></tr>
+      <tr id="rowPScoOther"><td>Posto auto scoperto esclusivo (altre zone)</td><td style="text-align:center"><span class="coeff">0.25</span></td><td><input type="number" id="supPScoOther" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resPScoOther" style="text-align:right">0.00</td></tr>`;
+  } else {
+    tbody.innerHTML = `
+      <tr id="rowGar12"><td>Autorimessa singola C/6 (zone 1-2)</td><td style="text-align:center"><span class="coeff">0.70</span></td><td><input type="number" id="supGar12" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGar12" style="text-align:right">0.00</td></tr>
+      <tr id="rowGar345"><td>Autorimessa singola C/6 (zone 3-4-5)</td><td style="text-align:center"><span class="coeff">0.60</span></td><td><input type="number" id="supGar345" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGar345" style="text-align:right">0.00</td></tr>
+      <tr id="rowGarOther"><td>Autorimessa singola C/6 (altre zone)</td><td style="text-align:center"><span class="coeff">0.50</span></td><td><input type="number" id="supGarOther" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGarOther" style="text-align:right">0.00</td></tr>
+      <tr id="rowGarCom"><td>Autorimessa comune</td><td style="text-align:center"><span class="coeff">0.20</span></td><td><input type="number" id="supGarCom" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGarCom" style="text-align:right">0.00</td></tr>`;
+  }
+}
+
+function impostaCitta(citta) {
   if (typeof r === 'string') r = JSON.parse(r);
+
+  // Rileva città dall'indirizzo
+  const indirizzo = (r.immobile.indirizzo || '').toUpperCase();
+  const isAlba = indirizzo.includes('ALBA');
+  impostaCitta(isAlba ? 'ALBA' : 'CUNEO');
+
   document.getElementById('proprietario').value = r.proprietario.nome;
   document.getElementById('inquilino').value    = r.inquilino.nome;
   document.getElementById('indirizzo').value    = r.immobile.indirizzo;
@@ -1922,6 +2048,7 @@ window.addEventListener('load', () => {
 // ---- END LOGIN ----
 
 // Init
+aggiornaTabellaSuperifici('CUNEO'); // inizializza tabella superfici con Cuneo
 calc();
 </script>
 </body>
