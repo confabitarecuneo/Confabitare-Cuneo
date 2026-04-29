@@ -1249,13 +1249,14 @@ function getSin(sup) {
 }
 
 function getV(id) { const el = document.getElementById(id); return el ? (parseFloat(el.value) || 0) : 0; }
+function setT(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
 function fmt(n) { return n.toFixed(2); }
 
 function calc() {
   const supSin = getV('supSin');
   const sinResult = getSin(supSin);
-  document.getElementById('coeffSin').textContent = sinResult.coeff;
-  document.getElementById('resSin').textContent = fmt(sinResult.rett);
+  setT('coeffSin', sinResult.coeff);
+  setT('resSin', fmt(sinResult.rett));
 
   let garTot = 0;
   if (CITTA === 'ALBA') {
@@ -1295,11 +1296,11 @@ function calc() {
   setR2('resSolaio',solaio);   setR2('resTerrazzo',terrazzo); setR2('resArea',area);
 
   const tot = sinResult.rett + garTot + cantina + balcone + solaio + terrazzo + area;
-  document.getElementById('totSup').textContent = fmt(tot) + ' mq';
+  setT('totSup', fmt(tot) + ' mq');
 
   // params total
   const totalP = PARAMS.reduce((s, p, i) => s + (paramsChecked[i] ? p.pts : 0), 0);
-  document.getElementById('totalParams').textContent = totalP.toFixed(1);
+  setT('totalParams', totalP.toFixed(1));
 
   updateFasciaInfo();
 }
@@ -1478,11 +1479,11 @@ function updateCanoneBase() {
 
   const mq = valoreSceltoBanda ? valoreSceltoBanda.val : null;
 
-  document.getElementById('cbMq').textContent    = mq  ? mq.toFixed(2) + ' €/mq' : '—';
-  document.getElementById('cbSup').textContent   = tot > 0 ? fmt(tot) + ' mq'    : '—';
-  document.getElementById('cbCanone').textContent = (mq && tot > 0)
+  setT('cbMq', mq  ? mq.toFixed(2) + ' €/mq' : '—');
+  setT('cbSup', tot > 0 ? fmt(tot) + ' mq'    : '—');
+  setT('cbCanone', (mq && tot > 0)
     ? '€ ' + (Math.round(mq * tot * 100) / 100).toFixed(2)
-    : '—';
+    : '—');
 }
 
 function buildPrintStep() {
@@ -1531,8 +1532,8 @@ function buildPrintStep() {
     tbody.appendChild(tr);
   });
 
-  document.getElementById('printTotReali').textContent = totReali.toFixed(2) + ' mq';
-  document.getElementById('printTotCalc').textContent  = totCalc.toFixed(2)  + ' mq';
+  setT('printTotReali', totReali.toFixed(2) + ' mq');
+  setT('printTotCalc', totCalc.toFixed(2)  + ' mq');
 
   // --- Tabella zone ---
   const z = parseInt(document.getElementById('zona').value) || null;
@@ -1572,7 +1573,7 @@ function buildPrintStep() {
     });
   }
   const totP = PARAMS.reduce((s, p, i) => s + (paramsChecked[i] ? p.pts : 0), 0);
-  document.getElementById('printTotParams').textContent = totP.toFixed(1) + ' → fascia ' + getFascia(totP);
+  setT('printTotParams', totP.toFixed(1) + ' → fascia ' + getFascia(totP));
 
   // --- Tabella scostamenti ---
   const tbodyS = document.getElementById('printScostBody');
@@ -1592,15 +1593,15 @@ function buildPrintStep() {
     tbodyS.appendChild(tr);
   });
   const totScost = scostArredamento + scostDurata + scostRecesso;
-  document.getElementById('printTotScost').textContent = (totScost > 0 ? '+' : '') + (totScost * 100).toFixed(0) + '%';
+  setT('printTotScost', (totScost > 0 ? '+' : '') + (totScost * 100).toFixed(0) + '%');
 
   // --- Canone finale nel modulo stampa ---
   const cfAmount = document.getElementById('canoneFinalAmount');
   const cfFascia = document.getElementById('canoneFinaleFascia');
   const cfNote   = document.getElementById('canoneFinalNote');
-  document.getElementById('printCanoneAmount').textContent = cfAmount ? cfAmount.textContent : '—';
+  setT('printCanoneAmount', cfAmount ? cfAmount.textContent : '—');
   document.getElementById('printCanoneFascia').innerHTML   = cfFascia ? cfFascia.innerHTML   : '—';
-  document.getElementById('printCanoneNote').textContent   = cfNote   ? cfNote.textContent   : '—';
+  setT('printCanoneNote', cfNote   ? cfNote.textContent   : '—');
 }
 
 function scaricaPDF() {
@@ -1839,13 +1840,13 @@ function aggiornaRichieste() {
   scriptGet((err, data) => {
     document.getElementById('richiesteBtn').style.display = 'block';
     if (err || !data || !data.ok) {
-      document.getElementById('richiesteCount').textContent = '!';
+      setT('richiesteCount', '!');
       return;
     }
     // Aggiorna cache locale
     if (!data.fromCache) localStorage.setItem('cf_richieste_cache', JSON.stringify(data.richieste));
     const inAttesa = (data.richieste || []).filter(r => r.stato === 'in attesa');
-    document.getElementById('richiesteCount').textContent = inAttesa.length;
+    setT('richiesteCount', inAttesa.length);
   });
 }
 
