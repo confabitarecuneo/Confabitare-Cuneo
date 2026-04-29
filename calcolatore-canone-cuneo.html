@@ -1912,6 +1912,55 @@ function renderRichieste(list, richieste, fromCache) {
   `).join('');
 }
 
+function caricaRichiesta(r) {
+  if (typeof r === 'string') r = JSON.parse(r);
+
+  // Rileva città dall'indirizzo
+  const indirizzo = (r.immobile.indirizzo || '').toUpperCase();
+  const isAlba = indirizzo.includes('ALBA');
+  impostaCitta(isAlba ? 'ALBA' : 'CUNEO');
+
+  document.getElementById('proprietario').value = r.proprietario.nome;
+  document.getElementById('inquilino').value    = r.inquilino.nome;
+  document.getElementById('indirizzo').value    = r.immobile.indirizzo;
+  document.getElementById('zona').value         = r.immobile.zona || '';
+  document.getElementById('foglio').value       = r.immobile.foglio || '';
+  document.getElementById('particella').value   = r.immobile.particella || '';
+  document.getElementById('subalterno').value   = r.immobile.subalterno || '';
+  document.getElementById('rendita').value      = r.immobile.rendita || '';
+  onZoneChange();
+
+  const labelMap = {};
+  PARAMS.forEach((p, i) => labelMap[p.label] = i);
+  paramsChecked.fill(false);
+  document.querySelectorAll('.check-item').forEach(el => el.classList.remove('checked'));
+  (r.parametri || []).forEach(p => {
+    const i = labelMap[p.label];
+    if (i !== undefined) { paramsChecked[i] = true; document.getElementById('param_' + i)?.classList.add('checked'); }
+  });
+  calc();
+  updateFasciaInfo();
+
+  if (r.contratto) {
+    const arredamentoVals = ['Non arredato','Parzialmente arredato (+15%)','Completamente arredato (+30%)'];
+    const durataVals      = ['3+2','4+2 (+2%)','5+2 (+3%)','6+2 (+4%)'];
+    const recessoVals     = ['Superiore a 3 mesi','Inferiore o uguale a 3 mesi (+1%)'];
+    [
+      { group: 'arredamento', label: r.contratto.arredamento?.label, labels: arredamentoVals, vals: [0,0.15,0.30] },
+      { group: 'durata',      label: r.contratto.durata?.label,      labels: durataVals,      vals: [0,0.02,0.03,0.04] },
+      { group: 'recesso',     label: r.contratto.recesso?.label,     labels: recessoVals,     vals: [0,0.01] },
+    ].forEach(({ group, label, labels, vals }) => {
+      const idx = Math.max(0, labels.indexOf(label));
+      selectRadio(group, idx, vals[idx]);
+    });
+  }
+
+  scriptPost({ action: 'aggiorna', id: r.id, stato: 'elaborata' }, () => aggiornaRichieste());
+  chiudiRichieste();
+  goStep(0);
+  alert('Dati caricati! Puoi procedere con il calcolo.');
+}
+
 function caricaRichiestaById(id) {
   const r = window._richiesteCache && window._richiesteCache[id];
   if (!r) { alert('Richiesta non trovata. Ricarica le richieste.'); return; }
