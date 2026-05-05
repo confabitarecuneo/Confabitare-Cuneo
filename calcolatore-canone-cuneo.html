@@ -1877,10 +1877,29 @@ function caricaRichiesta(r) {
 
   const labelMap = {};
   PARAMS.forEach((p, i) => labelMap[p.label] = i);
+  
+  // Compatibilità con vecchi label del form
+  const labelAlias = {
+    'Posto auto condominiale': 'Possibilità posto auto in area condominiale',
+    'Certificazione energetica A o B': 'Certificazione energetica classe A o B',
+    'Certificazione energetica C o D': 'Certificazione energetica classe C o D',
+    'Doppi servizi': 'Doppi servizi (o ulteriori)',
+    'Doppi vetri su tutte le aperture': 'Doppi vetri su tutte le aperture esterne',
+    'Ascensore': 'Stabile provvisto di ascensore',
+    'Area verde esclusiva': 'Area verde di pertinenza esclusiva',
+    'Videocitofono': 'Impianto videocitofono',
+    'Condizionamento fisso': 'Condizionamento impianto fisso',
+    'Fibra ottica': 'Stabile raggiunto da fibra ottica',
+    'Costr./ristr. completa entro 15 anni': 'Immobile di recente costr./ristr. completa (entro 15 anni con pr. edilizia)',
+    'Ristrutturazione parziale recente': 'Ristr. parziale recente (senza permesso edilizia)',
+    'Senza barriere architettoniche': 'Fabbricato senza barriere architettoniche',
+  };
+
   paramsChecked.fill(false);
   document.querySelectorAll('.check-item').forEach(el => el.classList.remove('checked'));
   (r.parametri || []).forEach(p => {
-    const i = labelMap[p.label];
+    const labelNorm = labelAlias[p.label] || p.label;
+    const i = labelMap[labelNorm];
     if (i !== undefined) { paramsChecked[i] = true; document.getElementById('param_' + i)?.classList.add('checked'); }
   });
   calc();
