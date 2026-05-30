@@ -114,7 +114,15 @@ textarea{resize:vertical;min-height:80px}
     <div class="card-header"><div class="card-icon">🏠</div><h3>Dati dell'Immobile</h3></div>
     <div class="card-body">
       <div class="slabel">Ubicazione</div>
-      <div class="field"><label>Indirizzo *</label><input type="text" id="indirizzo" placeholder="Via, numero civico, Cuneo"></div>
+      <div class="field"><label>Indirizzo *</label><input type="text" id="indirizzo" placeholder="Via, numero civico"></div>
+        <div class="field">
+          <label>Città *</label>
+          <select id="citta" required>
+            <option value="">— Seleziona città —</option>
+            <option value="Cuneo">Cuneo</option>
+            <option value="Alba">Alba</option>
+          </select>
+        </div>
       <hr class="divider">
       <div class="slabel">Dati Catastali</div>
       <div class="form-grid">
@@ -301,7 +309,7 @@ function delBox(id,e){
 }
 
 function doSubmit(){
-  var req=['propNome','propEmail','inqNome','indirizzo'];
+  var req=['propNome','propEmail','inqNome','indirizzo','citta'];
   for(var i=0;i<req.length;i++){
     var el=document.getElementById(req[i]);
     if(!el||!el.value.trim()){if(el)el.style.borderColor='#ef4444';alert('Compila tutti i campi obbligatori (*)');return;}
@@ -312,7 +320,7 @@ function doSubmit(){
     id:'REQ-'+Date.now(),timestamp:new Date().toLocaleString('it-IT'),
     proprietario:{nome:gv('propNome'),tel:gv('propTel'),email:gv('propEmail')},
     inquilino:{nome:gv('inqNome'),tel:gv('inqTel')},
-    immobile:{indirizzo:gv('indirizzo'),foglio:gv('foglio'),particella:gv('particella'),subalterno:gv('subalterno'),rendita:gv('rendita'),note:gv('note')},
+    immobile:{indirizzo:gv('indirizzo'),citta:gv('citta'),foglio:gv('foglio'),particella:gv('particella'),subalterno:gv('subalterno'),rendita:gv('rendita'),note:gv('note')},
     parametri:PARAMS.filter(function(p,i){return chk[i];}).map(function(p){return{label:p.l,pts:p.p};}),
     totParametri:PARAMS.reduce(function(s,p,i){return s+(chk[i]?p.p:0);},0),
     contratto:{arredamento:{idx:cs.a,label:aL[cs.a]},durata:{idx:cs.d,label:dL[cs.d]},recesso:{idx:cs.r,label:rL[cs.r]}},
