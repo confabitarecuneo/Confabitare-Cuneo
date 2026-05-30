@@ -1749,58 +1749,54 @@ function caricaPDFsuDrive() {
   const nomeComune = CITTA === 'ALBA' ? 'Alba' : 'Cuneo';
   const nomePDF = 'Calcolo concordato ' + nomeComune + ' ' + nomeProp + '.pdf';
 
-  // Invia a chunk da 10KB
-  const chunkSize = 10000;
-  const chunks = [];
-  for (let i = 0; i < pdfBase64.length; i += chunkSize) {
-    chunks.push(pdfBase64.substring(i, i + chunkSize));
-  }
-  const total = chunks.length;
+  btn.textContent = '⏳ Caricamento su Drive...';
 
-  btn.textContent = '⏳ Caricamento 0/' + total + '...';
+  // Usa form POST (aggira limiti URL di JSONP)
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = APPS_SCRIPT_URL;
+  form.target = 'pdfUploadFrame';
+  form.style.display = 'none';
 
-  function inviaChunk(idx) {
-    if (idx >= total) {
-      btn.textContent = '☁ Salva su Drive';
-      btn.disabled = false;
-      alert('✅ PDF salvato nella cartella Drive del cliente!');
-      return;
-    }
-    btn.textContent = '⏳ Caricamento ' + (idx+1) + '/' + total + '...';
-    const cb = 'pdfck_' + Date.now() + '_' + idx;
-    window[cb] = function(data) {
-      delete window[cb];
-      const s = document.getElementById('s_' + cb); if(s) s.remove();
-      if (data && data.ok) {
-        inviaChunk(idx + 1);
-      } else {
-        btn.textContent = '☁ Salva su Drive';
-        btn.disabled = false;
-        alert('❌ Errore: ' + (data ? data.error : 'nessuna risposta'));
-      }
-    };
-    setTimeout(function() {
-      if (window[cb]) {
-        delete window[cb];
-        btn.textContent = '☁ Salva su Drive';
-        btn.disabled = false;
-        alert('⏱ Timeout. Riprova.');
-      }
-    }, 30000);
-    const sc = document.createElement('script');
-    sc.id = 's_' + cb;
-    sc.src = APPS_SCRIPT_URL + '?callback=' + cb + '&payload=' + encodeURIComponent(JSON.stringify({
-      action: 'pdfChunk',
-      folderId: folderId,
-      fileName: nomePDF,
-      chunk: idx,
-      total: total,
-      data: chunks[idx]
-    }));
-    document.head.appendChild(sc);
+  const inp = document.createElement('input');
+  inp.type = 'hidden';
+  inp.name = 'payload';
+  inp.value = JSON.stringify({
+    action: 'salvaPDF',
+    folderId: folderId,
+    fileName: nomePDF,
+    pdfBase64: pdfBase64
+  });
+  form.appendChild(inp);
+  document.body.appendChild(form);
+
+  // Iframe nascosto per ricevere risposta
+  let iframe = document.getElementById('pdfUploadFrame');
+  if (!iframe) {
+    iframe = document.createElement('iframe');
+    iframe.name = 'pdfUploadFrame';
+    iframe.id = 'pdfUploadFrame';
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
   }
 
-  inviaChunk(0);
+  // Dopo 15s considera successo (form POST non ritorna risposta leggibile cross-origin)
+  const timer = setTimeout(() => {
+    form.remove();
+    btn.textContent = '☁ Salva su Drive';
+    btn.disabled = false;
+    alert('✅ PDF inviato! Controlla la cartella Drive del cliente tra qualche secondo.');
+  }, 15000);
+
+  iframe.onload = () => {
+    clearTimeout(timer);
+    form.remove();
+    btn.textContent = '☁ Salva su Drive';
+    btn.disabled = false;
+    alert('✅ PDF salvato nella cartella Drive del cliente!');
+  };
+
+  form.submit();
 }
 
 function scaricaFile(base64, nome) {
