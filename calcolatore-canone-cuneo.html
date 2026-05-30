@@ -1021,6 +1021,7 @@
     <div class="nav-row">
       <button class="btn btn-secondary" onclick="goStep(3)">← Indietro</button>
       <button class="btn btn-accent" onclick="scaricaPDF()">⬇ Scarica PDF</button>
+      <button class="btn btn-secondary" onclick="caricaPDFsuDrive()" id="btnDrive" style="background:#16a34a;border-color:#16a34a">☁ Salva su Drive</button>
     </div>
   </div>
 
@@ -1559,6 +1560,13 @@ function buildPrintStep() {
 function scaricaPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  scaricaPDFInternal(doc);
+  const nomeProp = (document.getElementById('proprietario').value || 'Calcolo').trim();
+  const nomeComune = CITTA === 'ALBA' ? 'Alba' : 'Cuneo';
+  doc.save('Calcolo concordato ' + nomeComune + ' ' + nomeProp + '.pdf');
+}
+
+function scaricaPDFInternal(doc) {
   const W = doc.internal.pageSize.getWidth();
   let y = 15;
 
@@ -1714,11 +1722,80 @@ function scaricaPDF() {
   doc.text(noteTxt, 20, y + 18);
   doc.setFontSize(20); doc.setFont('helvetica', 'bold'); doc.setTextColor(...ACCENT);
   doc.text(amount, W - 16, y + 16, { align: 'right' });
+}
 
-  // Nome file: "Calcolo concordato (nome proprietario)"
+function caricaPDFsuDrive() {
+  // Cerca la richiesta attiva dalla cache
+  const richiesta = window._richiestaAttiva;
+  if (!richiesta || !richiesta.driveUrl) {
+    alert('⚠️ Nessuna richiesta caricata o link Drive non disponibile.\nCarica prima una richiesta dal drawer.');
+    return;
+  }
+
+  const btn = document.getElementById('btnDrive');
+  btn.textContent = '⏳ Generazione PDF...';
+  btn.disabled = true;
+
+  // Genera il PDF come blob base64
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  // Riusa scaricaPDF ma restituisce base64 invece di salvare
+  const pdfBase64 = generaPDF(doc);
+
+  // Estrae l'ID cartella Drive dal link
+  const match = richiesta.driveUrl.match(/folders\/([a-zA-Z0-9_-]+)/);
+  if (!match) {
+    btn.textContent = '☁ Salva su Drive';
+    btn.disabled = false;
+    alert('⚠️ Link Drive non valido.');
+    return;
+  }
+  const folderId = match[1];
+
+  // Invia il PDF allo script Google tramite JSONP
   const nomeProp = (document.getElementById('proprietario').value || 'Calcolo').trim();
-  const nomeFile = 'Calcolo concordato ' + nomeComune + ' ' + nomeProp + '.pdf';
-  doc.save(nomeFile);
+  const nomeComune = CITTA === 'ALBA' ? 'Alba' : 'Cuneo';
+  const nomePDF = 'Calcolo concordato ' + nomeComune + ' ' + nomeProp + '.pdf';
+
+  const cbName = 'drvpdf_' + Date.now();
+  window[cbName] = function(data) {
+    delete window[cbName];
+    const s = document.getElementById('s_' + cbName); if(s) s.remove();
+    btn.textContent = '☁ Salva su Drive';
+    btn.disabled = false;
+    if (data && data.ok) {
+      alert('✅ PDF salvato nella cartella Drive del cliente!');
+    } else {
+      alert('❌ Errore: ' + (data ? data.error : 'nessuna risposta'));
+    }
+  };
+  setTimeout(function() {
+    if (window[cbName]) {
+      delete window[cbName];
+      btn.textContent = '☁ Salva su Drive';
+      btn.disabled = false;
+      alert('⏱ Timeout. Riprova.');
+    }
+  }, 30000);
+
+  const sc = document.createElement('script');
+  sc.id = 's_' + cbName;
+  sc.src = APPS_SCRIPT_URL + '?callback=' + cbName + '&payload=' + encodeURIComponent(JSON.stringify({
+    action: 'salvaPDF',
+    folderId: folderId,
+    fileName: nomePDF,
+    pdfBase64: pdfBase64
+  }));
+  document.head.appendChild(sc);
+
+  btn.textContent = '⏳ Caricamento su Drive...';
+}
+
+function generaPDF(doc) {
+  // Genera il PDF e restituisce base64
+  scaricaPDFInternal(doc);
+  return doc.output('datauristring').split(',')[1];
 }
 
 function scaricaFile(base64, nome) {
@@ -1942,6 +2019,7 @@ function caricaRichiesta(r) {
   }
 
   scriptPost({ action: 'aggiorna', id: r.id, stato: 'elaborata' }, () => aggiornaRichieste());
+  window._richiestaAttiva = r; // salva richiesta attiva per Drive upload
   chiudiRichieste();
   goStep(0);
   alert('Dati caricati! Puoi procedere con il calcolo.');
