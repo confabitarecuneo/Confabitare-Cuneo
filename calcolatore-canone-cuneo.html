@@ -1596,7 +1596,7 @@ function scaricaPDF() {
   // 1. Superfici
   sectionTitle('Calcolo superficie convenzionale');
   const supRows = [];
-  [\
+  [
     { label: 'Abitazione principale (SIN)', id: 'supSin', coeffFn: true },
     { label: 'Autorimessa singola C/6 (zone 1-2)',   id: 'supGar12',    coeff: 0.70 },
     { label: 'Autorimessa singola C/6 (zone 3-4-5)', id: 'supGar345',   coeff: 0.60 },
@@ -1718,129 +1718,6 @@ function scaricaPDF() {
   const nomeProp = (document.getElementById('proprietario').value || 'Calcolo').trim();
   const nomeFile = 'Calcolo concordato ' + nomeComune + ' ' + nomeProp + '.pdf';
   doc.save(nomeFile);
-
-  const sectionTitle = (txt) => {
-    doc.setFontSize(8); doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...ACCENT);
-    doc.text(txt.toUpperCase(), 14, y);
-    doc.setDrawColor(...ACCENT);
-    doc.line(14, y + 1, W - 14, y + 1);
-    y += 7;
-  };
-
-  // 1. Superfici
-  sectionTitle('Calcolo superficie convenzionale');
-  const supRows = [];
-  [
-    { label: 'Abitazione principale (SIN)', id: 'supSin', coeffFn: true },
-    { label: 'Autorimessa singola C/6 (zone 1-2)',   id: 'supGar12',    coeff: 0.70 },
-    { label: 'Autorimessa singola C/6 (zone 3-4-5)', id: 'supGar345',   coeff: 0.60 },
-    { label: 'Autorimessa singola C/6 (altre zone)', id: 'supGarOther', coeff: 0.50 },
-    { label: 'Autorimessa comune',  id: 'supGarCom',   coeff: 0.20 },
-    { label: 'Cantina',             id: 'supCantina',  coeff: 0.25 },
-    { label: 'Balcone',             id: 'supBalcone',  coeff: 0.25 },
-    { label: 'Solaio',              id: 'supSolaio',   coeff: 0.25 },
-    { label: 'Terrazzo',            id: 'supTerrazzo', coeff: 0.25 },
-    { label: 'Area esterna di pertinenza esclusiva', id: 'supArea', coeff: 0.15 },
-  ].forEach(r => {
-    const val = getV(r.id);
-    if (val <= 0) return;
-    let coeffLabel, rett;
-    if (r.coeffFn) { const res = getSin(val); coeffLabel = res.coeff; rett = res.rett; }
-    else { coeffLabel = r.coeff.toFixed(2); rett = Math.round(val * r.coeff * 100) / 100; }
-    supRows.push([r.label, coeffLabel, val.toFixed(2) + ' mq', rett.toFixed(2) + ' mq']);
-  });
-  const totCalcEl  = document.getElementById('printTotCalc');
-  const totRealiEl = document.getElementById('printTotReali');
-  doc.autoTable({
-    startY: y, margin: { left: 14, right: 14 },
-    head: [['Locale', 'Coeff.', 'Mq reali', 'Mq da calcolo']],
-    body: supRows,
-    foot: [['TOTALE MQ UTILI CONVENZIONALI', '', totRealiEl ? totRealiEl.textContent : '', totCalcEl ? totCalcEl.textContent : '']],
-    styles: { fontSize: 8, cellPadding: 2 },
-    headStyles: { fillColor: INK, textColor: [255,255,255] },
-    footStyles: { fillColor: BG2, textColor: INK, fontStyle: 'bold' },
-    columnStyles: { 0: { cellWidth: 90 }, 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right', textColor: GREEN } },
-  });
-  y = doc.lastAutoTable.finalY + 8;
-
-  // 2. Tabella zone
-  sectionTitle('Prospetto aree e valori del canone');
-  const zona = parseInt(document.getElementById('zona').value) || null;
-  const zoneRows = Object.entries(ZONE).map(([num, z]) => [
-    'ZONA ' + num, z.desc,
-    z.min[0].toFixed(2) + ' – ' + z.min[1].toFixed(2),
-    z.osc[0].toFixed(2) + ' – ' + z.osc[1].toFixed(2),
-    z.max[0].toFixed(2) + ' – ' + z.max[1].toFixed(2),
-  ]);
-  doc.autoTable({
-    startY: y, margin: { left: 14, right: 14 },
-    head: [['Zona', 'Ubicazione', 'Fascia Min.', 'Fascia Media', 'Fascia Max.']],
-    body: zoneRows,
-    styles: { fontSize: 7, cellPadding: 2 },
-    headStyles: { fillColor: INK, textColor: [255,255,255] },
-    columnStyles: { 0: { cellWidth: 16, fontStyle: 'bold' }, 1: { cellWidth: 80 }, 2: { halign: 'center' }, 3: { halign: 'center' }, 4: { halign: 'center' } },
-    didParseCell: (data) => {
-      if (data.section === 'body' && zona && data.row.index === zona - 1) {
-        data.cell.styles.fillColor = [240, 224, 204];
-        data.cell.styles.fontStyle = 'bold';
-      }
-    }
-  });
-  y = doc.lastAutoTable.finalY + 8;
-
-  // 3. Parametri
-  if (y > 240) { doc.addPage(); y = 15; }
-  sectionTitle('Parametri rettificativi presenti');
-  const paramRows = PARAMS.filter((p, i) => paramsChecked[i]).map(p => [p.label, '+' + p.pts.toFixed(1)]);
-  const totPdf = PARAMS.reduce((s, p, i) => s + (paramsChecked[i] ? p.pts : 0), 0);
-  doc.autoTable({
-    startY: y, margin: { left: 14, right: 14 },
-    head: [['Parametro', 'Valore']],
-    body: paramRows.length ? paramRows : [['Nessun parametro selezionato', '']],
-    foot: [['TOTALE PARAMETRI PRESENTI', totPdf.toFixed(1) + ' → fascia ' + getFascia(totPdf)]],
-    styles: { fontSize: 8, cellPadding: 2 },
-    headStyles: { fillColor: INK, textColor: [255,255,255] },
-    footStyles: { fillColor: BG2, textColor: INK, fontStyle: 'bold' },
-    columnStyles: { 1: { halign: 'right', textColor: GREEN } },
-  });
-  y = doc.lastAutoTable.finalY + 8;
-
-  // 4. Scostamenti
-  const totScostPdf = scostArredamento + scostDurata + scostRecesso;
-  doc.autoTable({
-    startY: y, margin: { left: 14, right: 14 },
-    head: [['Scostamenti percentuali', 'Percentuale']],
-    body: [
-      ['Arredamento',        (scostArredamento > 0 ? '+' : '') + (scostArredamento * 100).toFixed(0) + '%'],
-      ['Durata contratto',   (scostDurata > 0 ? '+' : '') + (scostDurata * 100).toFixed(0) + '%'],
-      ['Recesso conduttore', (scostRecesso > 0 ? '+' : '') + (scostRecesso * 100).toFixed(0) + '%'],
-    ],
-    foot: [['TOTALE SCOSTAMENTI', (totScostPdf > 0 ? '+' : '') + (totScostPdf * 100).toFixed(0) + '%']],
-    styles: { fontSize: 8, cellPadding: 2 },
-    headStyles: { fillColor: INK, textColor: [255,255,255] },
-    footStyles: { fillColor: BG2, textColor: INK, fontStyle: 'bold' },
-    columnStyles: { 1: { halign: 'right' } },
-  });
-  y = doc.lastAutoTable.finalY + 10;
-
-  // 5. Canone finale
-  if (y > 250) { doc.addPage(); y = 15; }
-  const amount   = document.getElementById('printCanoneAmount') ? document.getElementById('printCanoneAmount').textContent : '—';
-  const fasciaTxt= document.getElementById('printCanoneFascia') ? document.getElementById('printCanoneFascia').textContent : '—';
-  const noteTxt  = document.getElementById('printCanoneNote')   ? document.getElementById('printCanoneNote').textContent   : '—';
-  doc.setFillColor(...BG2);
-  doc.roundedRect(14, y, W - 28, 24, 2, 2, 'F');
-  doc.setDrawColor(...ACCENT);
-  doc.roundedRect(14, y, W - 28, 24, 2, 2, 'S');
-  doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(...INK2);
-  doc.text('CANONE MENSILE CONCORDATO', 20, y + 6);
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...INK2);
-  doc.text(fasciaTxt, 20, y + 12);
-  doc.text(noteTxt, 20, y + 18);
-  doc.setFontSize(20); doc.setFont('helvetica', 'bold'); doc.setTextColor(...ACCENT);
-  doc.text(amount, W - 16, y + 16, { align: 'right' });
-
 }
 
 function scaricaFile(base64, nome) {
@@ -2176,7 +2053,7 @@ window.addEventListener('load', () => {
 
 // Init
 aggiornaTabellaSuperifici('CUNEO');
-setTimeout(() => calc(), 100); // piccolo delay per assicurarsi che il DOM sia pronto
+setTimeout(() => calc(), 100);
 </script>
 </body>
 </html>
