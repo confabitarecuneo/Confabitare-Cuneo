@@ -1725,77 +1725,82 @@ function scaricaPDFInternal(doc) {
 }
 
 function caricaPDFsuDrive() {
-  // Cerca la richiesta attiva dalla cache
   const richiesta = window._richiestaAttiva;
   if (!richiesta || !richiesta.driveUrl) {
     alert('⚠️ Nessuna richiesta caricata o link Drive non disponibile.\nCarica prima una richiesta dal drawer.');
     return;
   }
 
+  const match = richiesta.driveUrl.match(/folders\/([a-zA-Z0-9_-]+)/);
+  if (!match) { alert('⚠️ Link Drive non valido.'); return; }
+  const folderId = match[1];
+
   const btn = document.getElementById('btnDrive');
   btn.textContent = '⏳ Generazione PDF...';
   btn.disabled = true;
 
-  // Genera il PDF come blob base64
+  // Genera PDF come base64
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  scaricaPDFInternal(doc);
+  const pdfBase64 = doc.output('datauristring').split(',')[1];
 
-  // Riusa scaricaPDF ma restituisce base64 invece di salvare
-  const pdfBase64 = generaPDF(doc);
-
-  // Estrae l'ID cartella Drive dal link
-  const match = richiesta.driveUrl.match(/folders\/([a-zA-Z0-9_-]+)/);
-  if (!match) {
-    btn.textContent = '☁ Salva su Drive';
-    btn.disabled = false;
-    alert('⚠️ Link Drive non valido.');
-    return;
-  }
-  const folderId = match[1];
-
-  // Invia il PDF allo script Google tramite JSONP
   const nomeProp = (document.getElementById('proprietario').value || 'Calcolo').trim();
   const nomeComune = CITTA === 'ALBA' ? 'Alba' : 'Cuneo';
   const nomePDF = 'Calcolo concordato ' + nomeComune + ' ' + nomeProp + '.pdf';
 
-  const cbName = 'drvpdf_' + Date.now();
-  window[cbName] = function(data) {
-    delete window[cbName];
-    const s = document.getElementById('s_' + cbName); if(s) s.remove();
-    btn.textContent = '☁ Salva su Drive';
-    btn.disabled = false;
-    if (data && data.ok) {
-      alert('✅ PDF salvato nella cartella Drive del cliente!');
-    } else {
-      alert('❌ Errore: ' + (data ? data.error : 'nessuna risposta'));
-    }
-  };
-  setTimeout(function() {
-    if (window[cbName]) {
-      delete window[cbName];
+  // Invia a chunk da 20KB
+  const chunkSize = 20000;
+  const chunks = [];
+  for (let i = 0; i < pdfBase64.length; i += chunkSize) {
+    chunks.push(pdfBase64.substring(i, i + chunkSize));
+  }
+  const total = chunks.length;
+
+  btn.textContent = '⏳ Caricamento 0/' + total + '...';
+
+  function inviaChunk(idx) {
+    if (idx >= total) {
       btn.textContent = '☁ Salva su Drive';
       btn.disabled = false;
-      alert('⏱ Timeout. Riprova.');
+      alert('✅ PDF salvato nella cartella Drive del cliente!');
+      return;
     }
-  }, 30000);
+    btn.textContent = '⏳ Caricamento ' + (idx+1) + '/' + total + '...';
+    const cb = 'pdfck_' + Date.now() + '_' + idx;
+    window[cb] = function(data) {
+      delete window[cb];
+      const s = document.getElementById('s_' + cb); if(s) s.remove();
+      if (data && data.ok) {
+        inviaChunk(idx + 1);
+      } else {
+        btn.textContent = '☁ Salva su Drive';
+        btn.disabled = false;
+        alert('❌ Errore: ' + (data ? data.error : 'nessuna risposta'));
+      }
+    };
+    setTimeout(function() {
+      if (window[cb]) {
+        delete window[cb];
+        btn.textContent = '☁ Salva su Drive';
+        btn.disabled = false;
+        alert('⏱ Timeout. Riprova.');
+      }
+    }, 20000);
+    const sc = document.createElement('script');
+    sc.id = 's_' + cb;
+    sc.src = APPS_SCRIPT_URL + '?callback=' + cb + '&payload=' + encodeURIComponent(JSON.stringify({
+      action: 'pdfChunk',
+      folderId: folderId,
+      fileName: nomePDF,
+      chunk: idx,
+      total: total,
+      data: chunks[idx]
+    }));
+    document.head.appendChild(sc);
+  }
 
-  const sc = document.createElement('script');
-  sc.id = 's_' + cbName;
-  sc.src = APPS_SCRIPT_URL + '?callback=' + cbName + '&payload=' + encodeURIComponent(JSON.stringify({
-    action: 'salvaPDF',
-    folderId: folderId,
-    fileName: nomePDF,
-    pdfBase64: pdfBase64
-  }));
-  document.head.appendChild(sc);
-
-  btn.textContent = '⏳ Caricamento su Drive...';
-}
-
-function generaPDF(doc) {
-  // Genera il PDF e restituisce base64
-  scaricaPDFInternal(doc);
-  return doc.output('datauristring').split(',')[1];
+  inviaChunk(0);
 }
 
 function scaricaFile(base64, nome) {
