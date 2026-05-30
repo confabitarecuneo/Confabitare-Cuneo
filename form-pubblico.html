@@ -94,6 +94,11 @@ textarea{resize:vertical;min-height:80px}
   <div class="card">
     <div class="card-header"><div class="card-icon">👤</div><h3>Dati Anagrafici</h3></div>
     <div class="card-body">
+      <div class="slabel">Agenzia <span style="font-weight:400;color:var(--ink2)">(se la richiesta proviene da un'agenzia immobiliare)</span></div>
+      <div class="form-grid">
+        <div class="field full"><label>Nome Agenzia</label><input type="text" id="agenzia" placeholder="es. Agenzia Immobiliare Rossi"></div>
+      </div>
+      <hr class="divider">
       <div class="slabel">Proprietario</div>
       <div class="form-grid">
         <div class="field"><label>Cognome e Nome *</label><input type="text" id="propNome" placeholder="es. Rossi Mario"></div>
@@ -318,7 +323,7 @@ function doSubmit(){
 
   var r={
     id:'REQ-'+Date.now(),timestamp:new Date().toLocaleString('it-IT'),
-    proprietario:{nome:gv('propNome'),tel:gv('propTel'),email:gv('propEmail')},
+    proprietario:{nome:gv('propNome'),tel:gv('propTel'),email:gv('propEmail'),agenzia:gv('agenzia')},
     inquilino:{nome:gv('inqNome'),tel:gv('inqTel')},
     immobile:{indirizzo:gv('indirizzo'),citta:gv('citta'),foglio:gv('foglio'),particella:gv('particella'),subalterno:gv('subalterno'),rendita:gv('rendita'),note:gv('note')},
     parametri:PARAMS.filter(function(p,i){return chk[i];}).map(function(p){return{label:p.l,pts:p.p};}),
