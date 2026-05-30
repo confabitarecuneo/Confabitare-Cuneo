@@ -1860,8 +1860,8 @@ function renderRichieste(list, richieste, fromCache) {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
         <div>
           <div style="font-family:'DM Mono',monospace;font-size:10px;color:#64748b">${r.id} · ${r.timestamp}</div>
-          <div style="font-weight:600;font-size:14px;margin-top:2px">${r.proprietario.nome}</div>
-          <div style="font-size:12px;color:#64748b">${r.immobile.indirizzo}${r.immobile.zona ? ' — Zona ' + r.immobile.zona : ''}</div>
+          <div style="font-weight:600;font-size:14px;margin-top:2px">${r.proprietario.agenzia ? '🏢 ' + r.proprietario.agenzia + ' — ' : ''}${r.proprietario.nome}</div>
+          <div style="font-size:12px;color:#64748b">${r.immobile.indirizzo}${r.immobile.citta ? ', ' + r.immobile.citta : ''}${r.immobile.zona ? ' — Zona ' + r.immobile.zona : ''}</div>
         </div>
         <span style="background:${r.stato==='in attesa'?'#fef3c7':'#dcfce7'};color:${r.stato==='in attesa'?'#92400e':'#15803d'};font-size:10px;font-family:'DM Mono',monospace;padding:3px 8px;border-radius:12px">${r.stato}</span>
       </div>
@@ -1873,6 +1873,7 @@ function renderRichieste(list, richieste, fromCache) {
         ${r.driveUrl ? `<a href="${r.driveUrl}" target="_blank" style="display:inline-block;background:#dbeafe;border:1px solid #93c5fd;color:#1d4ed8;border-radius:4px;padding:5px 14px;font-size:11px;font-family:'DM Mono',monospace;text-decoration:none">📁 Apri cartella documenti</a>` : '<span style="font-size:11px;color:#94a3b8">Nessun documento allegato</span>'}
       </div>
       <button onclick="caricaRichiestaById('${r.id}')" style="background:#1a2332;color:white;border:none;border-radius:4px;padding:7px 14px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;text-transform:uppercase">Carica nel calcolatore →</button>
+      <button onclick="copiaEmail('${r.id}')" style="background:none;border:1px solid #86efac;color:#166534;border-radius:4px;padding:7px 14px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;margin-left:6px">📧 Copia messaggio</button>
       <button onclick="eliminaRichiesta('${r.id}')" style="background:none;border:1px solid #fca5a5;color:#dc2626;border-radius:4px;padding:7px 14px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;margin-left:6px">Elimina</button>
     </div>
   `).join('');
@@ -1944,6 +1945,40 @@ function caricaRichiesta(r) {
   chiudiRichieste();
   goStep(0);
   alert('Dati caricati! Puoi procedere con il calcolo.');
+}
+
+function copiaEmail(id) {
+  const r = window._richiesteCache && window._richiesteCache[id];
+  if (!r) { alert('Richiesta non trovata.'); return; }
+  const destinatario = r.proprietario.agenzia || r.proprietario.nome;
+  const driveLink = r.driveUrl || '(link non disponibile)';
+  const messaggio =
+`Gentile ${destinatario},
+
+il calcolo del canone concordato relativo alla richiesta ${r.id} è stato elaborato ed è ora disponibile.
+
+Può scaricare il documento PDF accedendo alla cartella riservata al seguente link:
+${driveLink}
+
+Per qualsiasi informazione o chiarimento siamo a Sua disposizione.
+
+Cordiali saluti,
+Confabitare Cuneo
+cuneo.segreteria@confabitare.it
+Tel: 328 844 5883`;
+
+  navigator.clipboard.writeText(messaggio).then(() => {
+    alert('✅ Messaggio copiato! Incollalo nella tua email.');
+  }).catch(() => {
+    // Fallback per browser che non supportano clipboard API
+    const ta = document.createElement('textarea');
+    ta.value = messaggio;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    alert('✅ Messaggio copiato! Incollalo nella tua email.');
+  });
 }
 
 function caricaRichiestaById(id) {
