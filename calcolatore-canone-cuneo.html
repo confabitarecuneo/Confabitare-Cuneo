@@ -1881,9 +1881,9 @@ function renderRichieste(list, richieste, fromCache) {
 function caricaRichiesta(r) {
   if (typeof r === 'string') r = JSON.parse(r);
 
-  // Rileva città dall'indirizzo
-  const indirizzo = (r.immobile.indirizzo || '').toUpperCase();
-  const isAlba = indirizzo.includes('ALBA');
+  // Rileva città dal campo dedicato
+  const isAlba = (r.immobile.citta || '').toUpperCase() === 'ALBA' || 
+                 (r.immobile.indirizzo || '').toUpperCase().includes('ALBA');
   impostaCitta(isAlba ? 'ALBA' : 'CUNEO');
 
   document.getElementById('proprietario').value = r.proprietario.nome;
