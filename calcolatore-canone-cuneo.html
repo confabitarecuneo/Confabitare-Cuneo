@@ -1749,8 +1749,8 @@ function caricaPDFsuDrive() {
   const nomeComune = CITTA === 'ALBA' ? 'Alba' : 'Cuneo';
   const nomePDF = 'Calcolo concordato ' + nomeComune + ' ' + nomeProp + '.pdf';
 
-  // Invia a chunk da 20KB
-  const chunkSize = 20000;
+  // Invia a chunk da 10KB
+  const chunkSize = 10000;
   const chunks = [];
   for (let i = 0; i < pdfBase64.length; i += chunkSize) {
     chunks.push(pdfBase64.substring(i, i + chunkSize));
@@ -1786,7 +1786,7 @@ function caricaPDFsuDrive() {
         btn.disabled = false;
         alert('⏱ Timeout. Riprova.');
       }
-    }, 20000);
+    }, 30000);
     const sc = document.createElement('script');
     sc.id = 's_' + cb;
     sc.src = APPS_SCRIPT_URL + '?callback=' + cb + '&payload=' + encodeURIComponent(JSON.stringify({
