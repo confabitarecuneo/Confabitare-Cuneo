@@ -189,6 +189,9 @@ textarea { resize:vertical; min-height:70px; }
     <hr class="divider">
     <div class="form-grid">
       <div class="field full"><label>Prestazione Energetica (APE)</label><input type="text" id="immAPE" placeholder="es. Classe C — N° APE 12345 del 01/01/2024"></div>
+      <div class="field full"><label>Sicurezza impianti <span style="font-weight:400;color:var(--ink2)">(editabile)</span></label>
+        <input type="text" id="immSicurezza" value="gli impianti rispondono ai requisiti di legge">
+      </div>
     </div>
   </div>
 
@@ -210,8 +213,21 @@ textarea { resize:vertical; min-height:70px; }
       <div class="field full"><hr class="divider" style="margin:4px 0"></div>
       <div class="field"><label>Mesi recesso conduttore (art. 8)</label><input type="number" id="conRecesso" value="3" min="1" max="12"></div>
       <div class="field"><label>Deposito cauzionale (€)</label><input type="number" id="conDeposito" placeholder="es. 1200.00" step="0.01"></div>
-      <div class="field full"><label>Acconto oneri accessori (€/mese)</label><input type="number" id="conOneri" placeholder="es. 50.00" step="0.01"></div>
+      <div class="field full"><label>Oneri accessori <span style="font-weight:400;color:var(--ink2)">(editabile)</span></label>
+        <textarea id="conOneri" style="min-height:60px">Per gli oneri accessori le parti fanno applicazione della Tabella oneri accessori, allegato D al decreto emanato dal Ministro delle infrastrutture e dei trasporti. Il conduttore versa una quota di € _____ (euro _____) mensili, salvo conguaglio.</textarea>
+      </div>
       <div class="field full"><label>Altre clausole</label><textarea id="conClausole" placeholder="Inserire eventuali clausole aggiuntive..."></textarea></div>
+      <div class="field full">
+        <label>Articolo 16 – Cedolare secca <span style="font-weight:400;color:var(--ink2)">(facoltativo)</span></label>
+        <div style="display:flex;gap:12px;margin-top:6px">
+          <label style="display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:13px;text-transform:none;letter-spacing:0;cursor:pointer">
+            <input type="radio" name="cedolare" id="cedolareSi" value="si" checked> Sì — applica cedolare secca
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:13px;text-transform:none;letter-spacing:0;cursor:pointer">
+            <input type="radio" name="cedolare" id="cedolareNo" value="no"> No — non applica cedolare secca
+          </label>
+        </div>
+      </div>
       <div class="field full"><label>Data firma e città</label><input type="text" id="conDataFirma" placeholder="es. Cuneo, 01/06/2026"></div>
     </div>
   </div>
@@ -258,11 +274,16 @@ textarea { resize:vertical; min-height:70px; }
     <div id="scostList" style="font-size:12px;color:var(--ink2)">—</div>
 
     <div class="canone-box" style="margin-top:20px">
-      <div>
-        <div class="canone-label">Canone mensile concordato</div>
+      <div style="flex:1">
+        <div class="canone-label">Canone mensile concordato <span style="color:#f59e0b;font-size:9px">(modificabile)</span></div>
         <div style="font-size:12px;color:var(--ink2);margin-top:4px" id="canoneFasciaLabel">—</div>
+        <div style="margin-top:8px;display:flex;align-items:center;gap:6px">
+          <span style="font-size:16px;font-weight:700;color:var(--accent)">€</span>
+          <input type="number" id="canoneMensileInput" step="0.01" min="0" placeholder="0.00"
+            style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:4px 8px;width:140px;background:#fff"
+            onchange="aggiornaTotali()">
+        </div>
       </div>
-      <div class="canone-amount" id="canoneMensile">€ —</div>
     </div>
     <div style="margin-top:10px;display:flex;gap:20px;font-size:13px">
       <div><span style="color:var(--ink2)">Canone annuo:</span> <strong id="canoneAnnuo">€ —</strong></div>
@@ -431,6 +452,11 @@ function getCatastali() {
   return result.filter(c => c.foglio || c.mappale);
 }
 
+function aggiornaTotali() {
+  const val = parseFloat(document.getElementById('canoneMensileInput').value) || 0;
+  document.getElementById('canoneAnnuo').textContent = '€ ' + (val * 12).toFixed(2);
+}
+
 // ---- CERCA CALCOLO PER CODICE ----
 function cercaCalcolo() {
   const codice = document.getElementById('codiceCalcolo').value.trim().toUpperCase();
@@ -524,10 +550,25 @@ function applicaDatiCalcolatore(d) {
   scostList.innerHTML = scost.length ? scost.join(' · ') : 'Nessuno scostamento';
 
   // Canone
+  // Arredamento dal calcolatore
+  if (d.arredamento !== undefined) {
+    const arredoEl = document.getElementById('immArredo');
+    if (arredoEl) {
+      if (d.arredamento === 0) arredoEl.value = 'non ammobiliata';
+      else if (d.arredamento === 1) arredoEl.value = 'ammobiliata come da elenco a parte';
+      else if (d.arredamento === 2) arredoEl.value = 'ammobiliata come da documentazione fotografica a parte';
+    }
+  }
+  // Recesso dal calcolatore
+  if (d.scostRecesso > 0) {
+    document.getElementById('conRecesso').value = '3';
+  } else {
+    document.getElementById('conRecesso').value = '6';
+  }
   if (d.canoneMensile) {
-    document.getElementById('canoneMensile').textContent = '€ ' + parseFloat(d.canoneMensile).toFixed(2);
+    document.getElementById('canoneMensileInput').value = parseFloat(d.canoneMensile).toFixed(2);
     document.getElementById('canoneAnnuo').textContent = '€ ' + (parseFloat(d.canoneMensile) * 12).toFixed(2);
-    document.getElementById('canoneRata').textContent = '€ ' + parseFloat(d.canoneMensile).toFixed(2);
+    
     document.getElementById('canoneFasciaLabel').textContent = d.canoneFascia || '';
   }
 
@@ -631,7 +672,20 @@ function generaContrattoPDF() {
   const immComp   = gv('immComp')   || '______________________________';
   const immArredo = gv('immArredo') || 'non ammobiliata';
 
-  const premessa = `Il sig. ${locNome} nato a ${locNato} il ${locDN} e residente a ${locRes} in via ${locVia} - cod. fisc. ${locCF} di seguito denominato locatore (assistito da ${locAss} in persona di ${locAssPer}) concede in locazione al sig. ${conNome} nato a ${conNato} il ${conDN} e residente a ${conRes} in via ${conVia} - cod. fisc. ${conCF} di seguito denominato conduttore (assistito da ${conAss} in persona di ${conAssPer}), che accetta, per sé e suoi aventi causa, l'unità immobiliare posta in Cuneo – Via ${immVia}, al piano ${immPiano} composta da: ${immComp}, ${immArredo}.`;
+  // Costruisce stringa locatori
+  const locStr = locatori.map((l,i) => {
+    let s = `Il sig. ${l.nome} nato a ${l.nato} il ${l.dn} e residente a ${l.res} in via ${l.via} - cod. fisc. ${l.cf}`;
+    if (i === locatori.length - 1) s += ` di seguito denominato locatore`;
+    return s;
+  }).join(', e ');
+  // Costruisce stringa conduttori
+  const conStr = conduttori.map((c,i) => {
+    let s = `al sig. ${c.nome} nato a ${c.nato} il ${c.dn} e residente a ${c.res} in via ${c.via} - cod. fisc. ${c.cf}`;
+    if (i === conduttori.length - 1) s += ` di seguito denominato conduttore`;
+    return s;
+  }).join(', e ');
+
+  const premessa = `${locStr} (assistito da ${locAss} in persona di ${locAssPer}) concede in locazione ${conStr} (assistito da ${conAss} in persona di ${conAssPer}), che accetta, per sé e suoi aventi causa, l'unità immobiliare posta in Cuneo – Via ${immVia}, al piano ${immPiano} composta da: ${immComp}, ${immArredo}.`;
 
   addLine(premessa, 9, false, INK);
   addSpace(4);
@@ -646,7 +700,7 @@ function generaContrattoPDF() {
     addLine('foglio ____ - mappale _______ - subalterno _______ - cat. ______ - rendita € _______;', 9, false, INK, 4);
   }
   addLine(`b. PRESTAZIONE ENERGETICA: ${gv('immAPE')||'__________________________'};`, 9, false, INK);
-  addLine('c. SICUREZZA IMPIANTI: gli impianti rispondono ai requisiti di legge;', 9, false, INK);
+  addLine('c. SICUREZZA IMPIANTI: ' + (gv('immSicurezza') || 'gli impianti rispondono ai requisiti di legge') + ';', 9, false, INK);
   addLine('d. TABELLE MILLESIMALI: si utilizzano quelle in vigore nel condominio.', 9, false, INK);
   addSpace(4);
   addLine('La locazione è regolata dalle pattuizioni seguenti.', 9, false, INK);
@@ -662,7 +716,7 @@ function generaContrattoPDF() {
 
   // ---- ARTICOLO 2 CANONE ----
   if (y > 220) { doc.addPage(); y = 15; }
-  const canoneMensileEl = document.getElementById('canoneMensile').textContent.replace('€ ','').replace('—','');
+  const canoneMensileEl = document.getElementById('canoneMensileInput').value || '';
   const canoneAnnuoEl   = document.getElementById('canoneAnnuo').textContent.replace('€ ','').replace('—','');
   const [canAnn, canAnnWords] = fmtEuro(canoneAnnuoEl);
   const [canMens, canMensWords] = fmtEuro(canoneMensileEl);
@@ -679,7 +733,8 @@ function generaContrattoPDF() {
     const tds = tr.querySelectorAll('td');
     if (tds.length === 4) supRows.push([tds[0].textContent, tds[1].textContent, tds[2].textContent, tds[3].textContent]);
   });
-  const totMq = gv('calcTotMq') || '—';
+  const totMqVal = document.getElementById('calcTotMq') ? document.getElementById('calcTotMq').value.replace(' mq','') : '—';
+  const totMq = totMqVal + ' mq';
   if (supRows.length > 0) {
     doc.autoTable({
       startY: y, margin:{left:M, right:M},
@@ -694,33 +749,13 @@ function generaContrattoPDF() {
     y = doc.lastAutoTable.finalY + 5;
   }
 
-  // Tabella zone (semplificata)
-  if (y > 220) { doc.addPage(); y = 15; }
-  const zoneData = [
-    ['ZONA 1: VIA ROMA e P.ZA GALIMBERTI','3,92–4,02','4,88–4,98','5,84–5,94'],
-    ['ZONA 2: Centro Storico C.so Kennedy–C.so Papa Giovanni XXIII','3,47–3,57','4,33–4,43','5,18–5,28'],
-    ['ZONA 3: C.so Soleri–P.za Galimberti–C.so Garibaldi–C.so Ferraris','3,62–3,72','4,49–4,59','5,35–5,45'],
-    ['ZONA 4: V.le Angeli–P.za Europa–C.so Nizza–Dante–Giolitti–Brunet','4,00–4,10','4,98–5,08','5,95–6,05'],
-    ['ZONA 5: C.so Ferraris–C.so Gramsci–Lungostura–C.so Dante','3,39–3,49','4,27–4,37','5,15–5,25'],
-    ['ZONA 6: Cuneo2–Donatello–S.Rocco Castagnaretta','3,17–3,27','4,06–4,16','4,95–5,05'],
-    ['ZONA 7: Madonna Olmo–Confreria–Borgo S.Giuseppe–Madonna Grazie','3,01–3,11','3,75–3,85','4,49–4,59'],
-    ['ZONA 8: Altre frazioni e zona agricola','2,87–2,97','3,57–3,67','4,27–4,37'],
-  ];
-  const zonaNum = parseInt(document.getElementById('calcZona').value) || 0;
-  doc.autoTable({
-    startY:y, margin:{left:M, right:M},
-    head:[['Microzona','Fascia min. €/mq/mese','Fascia media €/mq/mese','Fascia max. €/mq/mese']],
-    body: zoneData,
-    styles:{fontSize:7, cellPadding:2},
-    headStyles:{fillColor:INK, textColor:[255,255,255]},
-    columnStyles:{0:{cellWidth:80},1:{halign:'center'},2:{halign:'center'},3:{halign:'center'}},
-    didParseCell:(data) => {
-      if (data.section==='body' && zonaNum && data.row.index===zonaNum-1) {
-        data.cell.styles.fillColor=[254,243,199]; data.cell.styles.fontStyle='bold';
-      }
-    }
-  });
-  y = doc.lastAutoTable.finalY + 5;
+  // Solo zona selezionata
+  const zonaVal = document.getElementById('calcZona').value || '';
+  if (zonaVal) {
+    addLine('Microzona: ' + zonaVal, 9, false, INK, 4);
+    addLine('Valore €/mq/mese: ' + (document.getElementById('calcValore').value || '—'), 9, false, INK, 4);
+    addSpace(3);
+  }
 
   // Parametri
   if (y > 230) { doc.addPage(); y = 15; }
@@ -756,7 +791,7 @@ function generaContrattoPDF() {
   // ---- ARTICOLI 3-17 ----
   const articoli = [
     ['Articolo 3 – Deposito cauzionale', `A garanzia delle obbligazioni assunte col presente contratto, il conduttore versa al locatore la somma di € ${fmtEuro(gv('conDeposito'))[0]} (euro ${fmtEuro(gv('conDeposito'))[1]}/00) non imputabile in conto canoni e produttiva di interessi legali che saranno corrisposti al termine della locazione.`],
-    ['Articolo 4 – Oneri accessori', `Per gli oneri accessori le parti fanno applicazione della Tabella allegato D al decreto ministeriale. Il conduttore versa una quota di € ${fmtEuro(gv('conOneri'))[0]} (euro ${fmtEuro(gv('conOneri'))[1]}) mensili, salvo conguaglio.`],
+    ['Articolo 4 – Oneri accessori', gv('conOneri') || 'Per gli oneri accessori le parti fanno applicazione della Tabella oneri accessori, allegato D al decreto ministeriale.'],
     ['Articolo 5 – Spese di bollo e di registrazione', 'Le spese di bollo per il presente contratto e per le ricevute conseguenti, sono a carico del conduttore. Il locatore provvede alla registrazione del contratto, dandone documentata comunicazione al conduttore.'],
     ['Articolo 6 – Pagamento', 'Il pagamento del canone o di quant\'altro dovuto anche per oneri accessori non può venire sospeso o ritardato da pretese o eccezioni del conduttore. Il mancato puntuale pagamento, per qualsiasi causa, anche di una sola rata del canone costituisce in mora il conduttore.'],
     ['Articolo 7 – Uso', 'L\'immobile deve essere destinato esclusivamente a civile abitazione del conduttore e delle persone attualmente con lui conviventi. Salvo espresso patto scritto contrario, è fatto divieto di sublocazione, sia totale sia parziale.'],
@@ -768,7 +803,9 @@ function generaContrattoPDF() {
     ['Articolo 13 – Accesso', 'Il conduttore deve consentire l\'accesso all\'unità immobiliare al locatore, al suo amministratore nonché ai loro incaricati ove gli stessi ne abbiano motivata ragione.'],
     ['Articolo 14 – Commissione di conciliazione', 'La Commissione di conciliazione è composta da due membri scelti fra appartenenti alle rispettive organizzazioni firmatarie dell\'Accordo territoriale sulla base delle designazioni del locatore e del conduttore.'],
     ['Articolo 15 – Attestato di Prestazione Energetica', `Il conduttore dichiara di aver ricevuto dal locatore copia dell'Attestato di Prestazione Energetica ${gv('immAPE')||'N° __________ - classe energetica __'} relativo all'unità immobiliare oggetto del presente contratto.`],
-    ['Articolo 16 – Cedolare secca', 'La parte locatrice dichiara di volersi avvalere della modalità di tassazione "cedolare secca" ai sensi del D. Lgs. n° 23 del 14/03/2011. Pertanto, la registrazione fiscale del presente contratto non comporterà alcun pagamento di imposta di registro o imposta di bollo.'],
+    ...(document.querySelector('input[name="cedolare"]:checked')?.value === 'si' ? [
+      ['Articolo 16 – Cedolare secca', 'La parte locatrice dichiara di volersi avvalere della modalità di tassazione "cedolare secca" ai sensi del D. Lgs. n° 23 del 14/03/2011. Pertanto, la registrazione fiscale del presente contratto non comporterà alcun pagamento di imposta di registro o imposta di bollo.']
+    ] : []),
     ['Articolo 17 – Varie', 'A tutti gli effetti del presente contratto, il conduttore elegge domicilio nei locali a lui locati. Qualunque modifica al presente contratto non può aver luogo, e non può essere provata, se non con atto scritto.'],
   ];
 
