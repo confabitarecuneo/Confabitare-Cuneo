@@ -1626,7 +1626,8 @@ function scaricaPDF() {
     scostDurata: scostDurata,
     scostRecesso: scostRecesso,
     canoneMensile: canoneMensile,
-    superfici: superfici
+    superfici: superfici,
+    arredamento: scostArredamento === 0.15 ? 1 : scostArredamento === 0.30 ? 2 : 0,
   };
 
   // Salva su Sheets in background
@@ -1867,6 +1868,7 @@ function esportaPerContratto() {
     canoneMensile: canoneMensile,
     canoneFascia: fascia,
     durataAnni: scostDurata === 0.02 ? 4 : scostDurata === 0.03 ? 5 : scostDurata === 0.04 ? 6 : 3,
+    arredamento: scostArredamento === 0.15 ? 1 : scostArredamento === 0.30 ? 2 : 0,
     indirizzo: document.getElementById('indirizzo') ? document.getElementById('indirizzo').value : '',
     foglio: document.getElementById('foglio') ? document.getElementById('foglio').value : '',
     particella: document.getElementById('particella') ? document.getElementById('particella').value : '',
