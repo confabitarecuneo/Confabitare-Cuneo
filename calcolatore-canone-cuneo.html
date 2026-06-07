@@ -1022,6 +1022,7 @@
       <button class="btn btn-secondary" onclick="goStep(3)">← Indietro</button>
       <button class="btn btn-accent" onclick="scaricaPDF()">⬇ Scarica PDF</button>
       <button class="btn btn-secondary" onclick="caricaPDFsuDrive()" id="btnDrive" style="background:#16a34a;border-color:#16a34a">☁ Salva su Drive</button>
+      <button class="btn btn-secondary" onclick="esportaPerContratto()" style="background:#7c3aed;border-color:#7c3aed">📋 Esporta per contratto</button>
     </div>
   </div>
 
@@ -1557,12 +1558,87 @@ function buildPrintStep() {
   setT('printCanoneNote', cfNote   ? cfNote.textContent   : '—');
 }
 
+function generaCodiceCalcolo() {
+  const now = new Date();
+  const datePart = now.getFullYear().toString().slice(2) +
+    String(now.getMonth()+1).padStart(2,'0') +
+    String(now.getDate()).padStart(2,'0');
+  const rand = Math.random().toString(36).substring(2,6).toUpperCase();
+  return 'CALC-' + datePart + '-' + rand;
+}
+
 function scaricaPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  scaricaPDFInternal(doc);
-  const nomeProp = (document.getElementById('proprietario').value || 'Calcolo').trim();
+
+  // Genera codice univoco e salva su Sheets
+  const codice = generaCodiceCalcolo();
+  const zona = parseInt(document.getElementById('zona').value) || null;
+  const nomeProp = (document.getElementById('proprietario').value || '').trim();
   const nomeComune = CITTA === 'ALBA' ? 'Alba' : 'Cuneo';
+
+  // Raccoglie superfici
+  const superfici = [];
+  const supDefs = [
+    {label:'Alloggio (SIN)', idV:'supSin', coeffFn:true},
+    {label:'Autorimessa (zone 1-2)', idV:'supGar12', coeff:0.70},
+    {label:'Autorimessa (zone 3-4-5)', idV:'supGar345', coeff:0.60},
+    {label:'Autorimessa (altre zone)', idV:'supGarOther', coeff:0.50},
+    {label:'Autorimessa comune', idV:'supGarCom', coeff:0.20},
+    {label:'Autorimessa zona 1', idV:'supGar1', coeff:0.80},
+    {label:'Autorimessa zona 2', idV:'supGar2', coeff:0.65},
+    {label:'Posto coperto zona 1', idV:'supPCop1', coeff:0.50},
+    {label:'Posto coperto zona 2', idV:'supPCop2', coeff:0.40},
+    {label:'Posto coperto altre', idV:'supPCopOther', coeff:0.30},
+    {label:'Posto scoperto zona 1', idV:'supPSco1', coeff:0.35},
+    {label:'Posto scoperto zona 2', idV:'supPSco2', coeff:0.30},
+    {label:'Posto scoperto altre', idV:'supPScoOther', coeff:0.25},
+    {label:'Cantina', idV:'supCantina', coeff:0.25},
+    {label:'Balcone', idV:'supBalcone', coeff:0.25},
+    {label:'Solaio', idV:'supSolaio', coeff:0.25},
+    {label:'Terrazzo', idV:'supTerrazzo', coeff:0.25},
+    {label:'Area pertinenza', idV:'supArea', coeff:0.15},
+  ];
+  supDefs.forEach(s => {
+    const val = getV(s.idV);
+    if (val <= 0) return;
+    let coeff, rett;
+    if (s.coeffFn) { const r = getSin(val); coeff = r.coeff; rett = r.rett; }
+    else { coeff = s.coeff.toFixed(2); rett = Math.round(val * s.coeff * 100)/100; }
+    superfici.push({label:s.label, coeff:coeff, mqReali:val.toFixed(2), mqCalc:rett.toFixed(2)});
+  });
+
+  const canoneMensileEl = document.getElementById('canoneFinalAmount');
+  const canoneMensile = canoneMensileEl ? canoneMensileEl.textContent.replace('€ ','').replace('—','') : '';
+  const totMqEl = document.getElementById('totSup');
+
+  const datiCalcolo = {
+    codice: codice,
+    timestamp: new Date().toLocaleString('it-IT'),
+    citta: nomeComune,
+    zona: zona || '',
+    fascia: getFascia(PARAMS.reduce((s,p,i)=>s+(paramsChecked[i]?p.pts:0),0)),
+    valoreMq: valoreSceltoBanda ? valoreSceltoBanda.val.toFixed(2) : '',
+    totMq: totMqEl ? totMqEl.textContent.replace(' mq','') : '',
+    parametri: PARAMS.filter((p,i)=>paramsChecked[i]).map(p=>({label:p.label, pts:p.pts})),
+    totParametri: PARAMS.reduce((s,p,i)=>s+(paramsChecked[i]?p.pts:0),0).toFixed(1),
+    scostArredamento: scostArredamento,
+    scostDurata: scostDurata,
+    scostRecesso: scostRecesso,
+    canoneMensile: canoneMensile,
+    superfici: superfici
+  };
+
+  // Salva su Sheets in background
+  const cbSave = 'sv_' + Date.now();
+  window[cbSave] = function() { delete window[cbSave]; };
+  const scSave = document.createElement('script');
+  scSave.src = APPS_SCRIPT_URL + '?callback=' + cbSave + '&payload=' + encodeURIComponent(JSON.stringify({action:'salvaCalcolo', calcolo:datiCalcolo}));
+  document.head.appendChild(scSave);
+
+  // Genera PDF con codice stampato
+  window._codiceCalcolo = codice;
+  scaricaPDFInternal(doc);
   doc.save('Calcolo concordato ' + nomeComune + ' ' + nomeProp + '.pdf');
 }
 
@@ -1722,6 +1798,87 @@ function scaricaPDFInternal(doc) {
   doc.text(noteTxt, 20, y + 18);
   doc.setFontSize(20); doc.setFont('helvetica', 'bold'); doc.setTextColor(...ACCENT);
   doc.text(amount, W - 16, y + 16, { align: 'right' });
+
+  // Footer con codice calcolo
+  const codice = window._codiceCalcolo || '';
+  if (codice) {
+    const pages = doc.internal.getNumberOfPages();
+    for (let p = 1; p <= pages; p++) {
+      doc.setPage(p);
+      doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(150,150,150);
+      doc.text('Codice calcolo: ' + codice + '  |  Confabitare Cuneo  |  Accordo Territoriale 01/03/2026', 105, 291, {align:'center'});
+      doc.text('Pag. ' + p + '/' + pages, W-14, 291, {align:'right'});
+    }
+  }
+}
+
+function esportaPerContratto() {
+  const zona = parseInt(document.getElementById('zona').value) || null;
+  const zoneDesc = zona && ZONE[zona] ? ZONE[zona].desc : '';
+  const fasciaEl = document.getElementById('canoneFinaleFascia');
+  const amountEl = document.getElementById('canoneFinalAmount');
+
+  // Raccoglie superfici con valori
+  const superfici = [];
+  const supDefs = [
+    {label:'Abitazione principale (SIN)', idV:'supSin', coeffFn:true},
+    {label:'Autorimessa singola C/6 (zone 1-2)',   idV:'supGar12',    coeff:0.70},
+    {label:'Autorimessa singola C/6 (zone 3-4-5)', idV:'supGar345',   coeff:0.60},
+    {label:'Autorimessa singola C/6 (altre zone)', idV:'supGarOther', coeff:0.50},
+    {label:'Autorimessa comune',                   idV:'supGarCom',   coeff:0.20},
+    {label:'Autorimessa singola (Zona 1)',          idV:'supGar1',     coeff:0.80},
+    {label:'Autorimessa singola (Zona 2)',          idV:'supGar2',     coeff:0.65},
+    {label:'Posto auto coperto (Zona 1)',           idV:'supPCop1',    coeff:0.50},
+    {label:'Posto auto coperto (Zona 2)',           idV:'supPCop2',    coeff:0.40},
+    {label:'Posto auto coperto (altre zone)',       idV:'supPCopOther',coeff:0.30},
+    {label:'Posto auto scoperto (Zona 1)',          idV:'supPSco1',    coeff:0.35},
+    {label:'Posto auto scoperto (Zona 2)',          idV:'supPSco2',    coeff:0.30},
+    {label:'Posto auto scoperto (altre zone)',      idV:'supPScoOther',coeff:0.25},
+    {label:'Cantina',    idV:'supCantina',  coeff:0.25},
+    {label:'Balcone',    idV:'supBalcone',  coeff:0.25},
+    {label:'Solaio',     idV:'supSolaio',   coeff:0.25},
+    {label:'Terrazzo',   idV:'supTerrazzo', coeff:0.25},
+    {label:'Area esterna di pertinenza esclusiva', idV:'supArea', coeff:0.15},
+  ];
+  supDefs.forEach(s => {
+    const val = getV(s.idV);
+    if (val <= 0) return;
+    let coeff, rett;
+    if (s.coeffFn) { const r = getSin(val); coeff = r.coeff; rett = r.rett; }
+    else { coeff = s.coeff.toFixed(2); rett = Math.round(val * s.coeff * 100)/100; }
+    superfici.push({label:s.label, coeff:coeff, mqReali:val.toFixed(2), mqCalc:rett.toFixed(2)});
+  });
+
+  const canoneMensile = amountEl ? amountEl.textContent.replace('€ ','').replace('—','') : '';
+  const fascia = document.getElementById('canoneFinaleFascia') ? document.getElementById('canoneFinaleFascia').textContent : '';
+
+  const dati = {
+    zona: zona,
+    zonaDesc: zoneDesc,
+    fascia: document.getElementById('fasciaLabel') ? document.getElementById('fasciaLabel').textContent : getFascia(PARAMS.reduce((s,p,i)=>s+(paramsChecked[i]?p.pts:0),0)),
+    valoreMq: valoreSceltoBanda ? valoreSceltoBanda.val.toFixed(2) : '',
+    totMq: document.getElementById('totSup') ? document.getElementById('totSup').textContent.replace(' mq','') : '',
+    superfici: superfici,
+    parametri: PARAMS.filter((p,i)=>paramsChecked[i]).map(p=>({label:p.label, pts:p.pts})),
+    totParametri: PARAMS.reduce((s,p,i)=>s+(paramsChecked[i]?p.pts:0),0).toFixed(1),
+    scostArredamento: scostArredamento,
+    scostDurata: scostDurata,
+    scostRecesso: scostRecesso,
+    canoneMensile: canoneMensile,
+    canoneFascia: fascia,
+    durataAnni: scostDurata === 0.02 ? 4 : scostDurata === 0.03 ? 5 : scostDurata === 0.04 ? 6 : 3,
+    indirizzo: document.getElementById('indirizzo') ? document.getElementById('indirizzo').value : '',
+    foglio: document.getElementById('foglio') ? document.getElementById('foglio').value : '',
+    particella: document.getElementById('particella') ? document.getElementById('particella').value : '',
+    subalterno: document.getElementById('subalterno') ? document.getElementById('subalterno').value : '',
+    rendita: document.getElementById('rendita') ? document.getElementById('rendita').value : '',
+  };
+
+  sessionStorage.setItem('cf_contratto_dati', JSON.stringify(dati));
+  alert('✅ Dati esportati!\n\nApri ora il modulo contratto e clicca "Importa dal calcolatore".');
+
+  // Apri il contratto in una nuova scheda
+  window.open('contratto-locazione.html', '_blank');
 }
 
 function caricaPDFsuDrive() {
