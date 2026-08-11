@@ -1054,10 +1054,26 @@ const ZONE_ALBA = {
   6: { desc: "Zona 6 — Frazioni periferiche e zona agricola",    min:[2.40,2.50], osc:[3.22,3.32], max:[4.65,4.75] }
 };
 
+// ---- SALUZZO ----
+const ZONE_SALUZZO = {
+  1:  { desc: "Microzona 1 — parte a S-O di C.so XXVII Aprile e C.so Roma",          min:[3.65,3.75], osc:[4.85,4.95], max:[6.05,6.15] },
+  2:  { desc: "Microzona 1 — parte a N-E di C.so XXVII Aprile e C.so Roma",          min:[3.40,3.50], osc:[4.48,4.58], max:[5.56,5.66] },
+  3:  { desc: "Microzona 1 — parte a S di Via G. Vecchia",                            min:[2.41,2.51], osc:[3.48,3.58], max:[4.55,4.65] },
+  4:  { desc: "Microzona 2 — parte a N di Via Pagno",                                 min:[2.78,2.88], osc:[3.86,3.96], max:[4.93,5.03] },
+  5:  { desc: "Microzona 2 — parte a S di Via Pagno",                                 min:[3.40,3.50], osc:[4.48,4.58], max:[5.56,5.66] },
+  6:  { desc: "Microzona 3",                                                           min:[2.91,3.01], osc:[4.10,4.20], max:[5.29,5.39] },
+  7:  { desc: "Microzona 4",                                                           min:[2.78,2.88], osc:[3.86,3.96], max:[4.93,5.03] },
+  8:  { desc: "Microzona 5 — sponda orografica sinistra del Rio Tagliata",            min:[2.78,2.88], osc:[3.86,3.96], max:[4.93,5.03] },
+  9:  { desc: "Microzona 5 — sponda orografica destra del Rio Tagliata",              min:[2.41,2.51], osc:[3.48,3.58], max:[4.55,4.65] },
+  10: { desc: "Microzona 6",                                                           min:[2.41,2.51], osc:[3.37,3.47], max:[4.32,4.42] },
+  11: { desc: "Microzona 7 — municipio di Castellar",                                 min:[2.91,3.01], osc:[4.10,4.20], max:[5.29,5.39] }
+};
+
 // Città attiva (default Cuneo)
 let CITTA = 'CUNEO';
 let ZONE  = ZONE_CUNEO;
-const CANONE_MAX_ALBA = 600; // tetto mensile Alba
+const CANONE_MAX_ALBA    = 600;
+const CANONE_MAX_SALUZZO = 550;
 
 // Fascia determinata dal totale elementi (parametri presenti)
 // MINIMA: < 5 | MEDIA: 6–9 | MASSIMA: ≥ 10
@@ -1151,20 +1167,23 @@ function aggiornaLinkMappa() {
 function aggiornaVisibilitaAutorimesse() {
   const zona = parseInt(document.getElementById('zona').value) || 0;
   if (CITTA === 'ALBA') {
-    // Mostra solo la riga pertinente alla zona
     const show1 = zona === 1, show2 = zona === 2, showOther = zona >= 3;
     ['rowGar1','rowPCop1','rowPSco1'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display = show1 ? '' : 'none'; });
     ['rowGar2','rowPCop2','rowPSco2'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display = show2 ? '' : 'none'; });
     ['rowGarOther','rowPCopOther','rowPScoOther'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display = showOther ? '' : 'none'; });
+  } else if (CITTA === 'SALUZZO') {
+    // Saluzzo: zona 1 → gar zona1 (0.60); altre zone → garOther (0.50); comune sempre visibile
+    const show1 = zona === 1, showOther = zona >= 2;
+    const el1 = document.getElementById('rowGar1'); if(el1) el1.style.display = show1 ? '' : 'none';
+    const elOther = document.getElementById('rowGarOther'); if(elOther) elOther.style.display = showOther ? '' : 'none';
   } else {
-    // Cuneo: zona 1-2 → mostra righe gar12; zona 3-4-5 → mostra gar345; altre → mostra garOther
+    // Cuneo
     const show12 = zona === 1 || zona === 2;
     const show345 = zona === 3 || zona === 4 || zona === 5;
     const showOther = zona === 6 || zona === 7 || zona === 8;
     const el12 = document.getElementById('rowGar12'); if(el12) el12.style.display = show12 ? '' : 'none';
     const el345 = document.getElementById('rowGar345'); if(el345) el345.style.display = show345 ? '' : 'none';
     const elOther = document.getElementById('rowGarOther'); if(elOther) elOther.style.display = showOther ? '' : 'none';
-    // Autorimessa comune sempre visibile
   }
 }
 
@@ -1228,6 +1247,13 @@ function calc() {
     setR('resGar1',gar1); setR('resGar2',gar2); setR('resGarOther',garOther);
     setR('resPCop1',pCop1); setR('resPCop2',pCop2); setR('resPCopOther',pCopOther);
     setR('resPSco1',pSco1); setR('resPSco2',pSco2); setR('resPScoOther',pScoOther);
+  } else if (CITTA === 'SALUZZO') {
+    const gar1     = getV('supGar1')     * 0.60;
+    const garOther = getV('supGarOther') * 0.50;
+    const garCom   = getV('supGarCom')   * 0.20;
+    garTot = gar1 + garOther + garCom;
+    const setR = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=fmt(v); };
+    setR('resGar1',gar1); setR('resGarOther',garOther); setR('resGarCom',garCom);
   } else {
     const gar12    = getV('supGar12')    * 0.7;
     const gar345   = getV('supGar345')   * 0.6;
@@ -1383,6 +1409,8 @@ function computeResult() {
     garTot2 = getV('supGar1')*0.80 + getV('supGar2')*0.65 + getV('supGarOther')*0.50
       + getV('supPCop1')*0.50 + getV('supPCop2')*0.40 + getV('supPCopOther')*0.30
       + getV('supPSco1')*0.35 + getV('supPSco2')*0.30 + getV('supPScoOther')*0.25;
+  } else if (CITTA === 'SALUZZO') {
+    garTot2 = getV('supGar1')*0.60 + getV('supGarOther')*0.50 + getV('supGarCom')*0.20;
   } else {
     garTot2 = getV('supGar12')*0.7 + getV('supGar345')*0.6 + getV('supGarOther')*0.5 + getV('supGarCom')*0.2;
   }
@@ -1413,6 +1441,10 @@ function computeResult() {
   if (CITTA === 'ALBA' && canoneFin > CANONE_MAX_ALBA) {
     canoneFin = CANONE_MAX_ALBA;
     noteTetto = ` ⚠️ Tetto massimo Alba: €${CANONE_MAX_ALBA}/mese applicato`;
+  }
+  if (CITTA === 'SALUZZO' && canoneFin > CANONE_MAX_SALUZZO) {
+    canoneFin = CANONE_MAX_SALUZZO;
+    noteTetto = ` ⚠️ Tetto massimo Saluzzo: €${CANONE_MAX_SALUZZO}/mese applicato`;
   }
 
   const fasciaColor = fascia === 'MINIMA' ? '#6ee7b7' : fascia === 'MEDIA' ? '#fbbf24' : '#fca5a5';
@@ -1661,8 +1693,8 @@ function scaricaPDFInternal(doc) {
   // Logo
   doc.addImage('data:image/jpeg;base64,' + LOGO_B64, 'JPEG', 14, 6, 50, 15);
   // Testo a destra del logo — città dinamica
-  const nomeComune = CITTA === 'ALBA' ? 'Alba' : 'Cuneo';
-  const dataAccordo = CITTA === 'ALBA' ? '01/05/2026' : '01/03/2026';
+  const nomeComune = CITTA === 'ALBA' ? 'Alba' : CITTA === 'SALUZZO' ? 'Saluzzo' : 'Cuneo';
+  const dataAccordo = CITTA === 'ALBA' ? '01/05/2026' : CITTA === 'SALUZZO' ? '01/05/2026' : '01/03/2026';
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(11); doc.setFont('helvetica', 'bold');
   doc.text('Calcolo ' + nomeComune + ' — Canone Concordato', W - 14, 11, { align: 'right' });
@@ -2120,9 +2152,11 @@ function caricaRichiesta(r) {
   if (typeof r === 'string') r = JSON.parse(r);
 
   // Rileva città dal campo dedicato
-  const isAlba = (r.immobile.citta || '').toUpperCase() === 'ALBA' || 
+  const isAlba = (r.immobile.citta || '').toUpperCase() === 'ALBA' ||
                  (r.immobile.indirizzo || '').toUpperCase().includes('ALBA');
-  impostaCitta(isAlba ? 'ALBA' : 'CUNEO');
+  const isSaluzzo = (r.immobile.citta || '').toUpperCase() === 'SALUZZO' ||
+                    (r.immobile.indirizzo || '').toUpperCase().includes('SALUZZO');
+  impostaCitta(isAlba ? 'ALBA' : isSaluzzo ? 'SALUZZO' : 'CUNEO');
 
   document.getElementById('proprietario').value = r.proprietario.nome;
   document.getElementById('inquilino').value    = r.inquilino.nome;
@@ -2227,9 +2261,9 @@ function caricaRichiestaById(id) {
 
 function impostaCitta(citta) {
   CITTA = citta;
-  ZONE  = citta === 'ALBA' ? ZONE_ALBA : ZONE_CUNEO;
+  ZONE  = citta === 'ALBA' ? ZONE_ALBA : citta === 'SALUZZO' ? ZONE_SALUZZO : ZONE_CUNEO;
 
-  // Aggiorna badge città nell'header
+  // Badge città
   let badge = document.getElementById('cittaBadge');
   if (!badge) {
     badge = document.createElement('div');
@@ -2237,36 +2271,31 @@ function impostaCitta(citta) {
     badge.style.cssText = 'position:fixed;top:12px;right:80px;z-index:9999;padding:4px 12px;border-radius:12px;font-family:DM Mono,monospace;font-size:11px;font-weight:700;letter-spacing:.05em';
     document.body.appendChild(badge);
   }
-  if (citta === 'ALBA') {
-    badge.textContent = '🏙️ ALBA';
-    badge.style.background = '#fef3c7';
-    badge.style.color = '#92400e';
-    badge.style.border = '1px solid #fde68a';
-  } else {
-    badge.textContent = '🏙️ CUNEO';
-    badge.style.background = '#dbeafe';
-    badge.style.color = '#1e40af';
-    badge.style.border = '1px solid #93c5fd';
-  }
+  const badgeColors = {
+    ALBA:    {bg:'#fef3c7', color:'#92400e', border:'#fde68a'},
+    SALUZZO: {bg:'#f3e8ff', color:'#6b21a8', border:'#d8b4fe'},
+    CUNEO:   {bg:'#dbeafe', color:'#1e40af', border:'#93c5fd'},
+  };
+  const bc = badgeColors[citta] || badgeColors.CUNEO;
+  badge.textContent = '🏙️ ' + citta;
+  badge.style.background = bc.bg;
+  badge.style.color = bc.color;
+  badge.style.border = '1px solid ' + bc.border;
 
-  // Aggiorna select zona
+  // Aggiorna select zona con descrizioni
   const zonaEl = document.getElementById('zona');
   if (zonaEl) {
-    const nZone = citta === 'ALBA' ? 6 : 8;
+    const nZone = citta === 'ALBA' ? 6 : citta === 'SALUZZO' ? 11 : 8;
     zonaEl.innerHTML = '<option value="">— Seleziona zona —</option>';
     for (let i = 1; i <= nZone; i++) {
-      zonaEl.innerHTML += `<option value="${i}">Zona ${i}</option>`;
+      const desc = ZONE[i] ? ZONE[i].desc : 'Zona ' + i;
+      const shortDesc = desc.length > 55 ? desc.substring(0, 55) + '...' : desc;
+      zonaEl.innerHTML += `<option value="${i}">Zona ${i} — ${shortDesc}</option>`;
     }
   }
 
-  // Aggiorna righe tabella superfici per garage
-  // Alba ha: gar zona1 (0.8), gar zona2 (0.65), gar altre (0.5)
-  //          posto coperto zona1 (0.5), zona2 (0.4), altre (0.3)
-  //          posto scoperto zona1 (0.35), zona2 (0.3), altre (0.25)
-  // Cuneo ha: gar zone1-2 (0.7), gar zone3-4-5 (0.6), gar altre (0.5), gar comune (0.2)
   aggiornaTabellaSuperifici(citta);
 
-  // Reset zona e ricalcola
   document.getElementById('zona').value = '';
   aggiornaVisibilitaAutorimesse();
   calc();
@@ -2296,6 +2325,12 @@ function aggiornaTabellaSuperifici(citta) {
       <tr id="rowPSco1"><td>Posto auto scoperto esclusivo (Zona 1)</td><td style="text-align:center"><span class="coeff">0.35</span></td><td><input type="number" id="supPSco1" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resPSco1" style="text-align:right">0.00</td></tr>
       <tr id="rowPSco2"><td>Posto auto scoperto esclusivo (Zona 2)</td><td style="text-align:center"><span class="coeff">0.30</span></td><td><input type="number" id="supPSco2" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resPSco2" style="text-align:right">0.00</td></tr>
       <tr id="rowPScoOther"><td>Posto auto scoperto esclusivo (altre zone)</td><td style="text-align:center"><span class="coeff">0.25</span></td><td><input type="number" id="supPScoOther" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resPScoOther" style="text-align:right">0.00</td></tr>
+      ${righeComuni}`;
+  } else if (citta === 'SALUZZO') {
+    tbody.innerHTML = `
+      <tr id="rowGar1"><td>Autorimessa singola (Zona 1)</td><td style="text-align:center"><span class="coeff">0.60</span></td><td><input type="number" id="supGar1" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGar1" style="text-align:right">0.00</td></tr>
+      <tr id="rowGarOther"><td>Autorimessa singola (altre zone)</td><td style="text-align:center"><span class="coeff">0.50</span></td><td><input type="number" id="supGarOther" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGarOther" style="text-align:right">0.00</td></tr>
+      <tr id="rowGarCom"><td>Autorimessa comune</td><td style="text-align:center"><span class="coeff">0.20</span></td><td><input type="number" id="supGarCom" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGarCom" style="text-align:right">0.00</td></tr>
       ${righeComuni}`;
   } else {
     tbody.innerHTML = `
