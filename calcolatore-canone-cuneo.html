@@ -2017,7 +2017,12 @@ function goStep(n) {
 }
 
 // ---- LOGIN ----
-const USERS = { 'confabitare': 'cuneo2026', 'admin': 'canone2026' };
+const USERS = {
+  'admin':       { pw: 'canone2026', citta: null,             nome: 'Admin',               isAdmin: true  },
+  'confabitare': { pw: 'cuneo2026',  citta: ['CUNEO','ALBA'], nome: 'Operatore Cuneo/Alba', isAdmin: false },
+  'Saluzzo':     { pw: 'ConSZ26',    citta: ['SALUZZO'],      nome: 'Operatore Saluzzo',    isAdmin: false },
+};
+let currentUser = null;
 
 // ---- CONFIGURAZIONE GOOGLE APPS SCRIPT ----
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwzHMM4vKkE4MJytpbSAlM1NYZ1dwPXrb5poEGwvYq_487orTxjqfG6xSQPZn-dlbjh5g/exec';
@@ -2026,9 +2031,20 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwzHMM4vKkE4MJy
 function doLogin() {
   const u = document.getElementById('loginUser').value.trim();
   const p = document.getElementById('loginPass').value;
-  if (USERS[u] && USERS[u] === p) {
+  const user = USERS[u];
+  if (user && user.pw === p) {
+    currentUser = { username: u, ...user };
     document.getElementById('loginOverlay').style.display = 'none';
-    sessionStorage.setItem('cf_logged', '1');
+    sessionStorage.setItem('cf_logged', JSON.stringify({ username: u }));
+    // Badge utente
+    let badge = document.getElementById('userBadge');
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.id = 'userBadge';
+      badge.style.cssText = 'position:fixed;top:12px;left:16px;z-index:9999;padding:4px 12px;border-radius:12px;background:#1a2332;border:1px solid #475569;font-family:DM Mono,monospace;font-size:11px;color:#94a3b8';
+      document.body.appendChild(badge);
+    }
+    badge.textContent = '👤 ' + user.nome;
     aggiornaRichieste();
   } else {
     document.getElementById('loginErr').style.display = 'block';
@@ -2114,6 +2130,14 @@ function apriRichieste() {
 }
 
 function renderRichieste(list, richieste, fromCache) {
+  // Filtra per città se non admin
+  if (currentUser && !currentUser.isAdmin && currentUser.citta) {
+    richieste = richieste.filter(r => {
+      const c = (r.immobile.citta || '').toUpperCase();
+      return currentUser.citta.some(cc => cc === c);
+    });
+  }
+
   if (richieste.length === 0) {
     list.innerHTML = '<p style="color:#64748b;font-size:13px;text-align:center;padding:32px 0">Nessuna richiesta ricevuta</p>';
     return;
@@ -2352,9 +2376,25 @@ function chiudiRichieste() {
 }
 
 window.addEventListener('load', () => {
-  if (sessionStorage.getItem('cf_logged')) {
-    document.getElementById('loginOverlay').style.display = 'none';
-    aggiornaRichieste();
+  const saved = sessionStorage.getItem('cf_logged');
+  if (saved) {
+    try {
+      const s = JSON.parse(saved);
+      const user = USERS[s.username];
+      if (user) {
+        currentUser = { username: s.username, ...user };
+        document.getElementById('loginOverlay').style.display = 'none';
+        let badge = document.getElementById('userBadge');
+        if (!badge) {
+          badge = document.createElement('div');
+          badge.id = 'userBadge';
+          badge.style.cssText = 'position:fixed;top:12px;left:16px;z-index:9999;padding:4px 12px;border-radius:12px;background:#1a2332;border:1px solid #475569;font-family:DM Mono,monospace;font-size:11px;color:#94a3b8';
+          document.body.appendChild(badge);
+        }
+        badge.textContent = '👤 ' + user.nome;
+        aggiornaRichieste();
+      }
+    } catch(e) {}
   }
 });
 
