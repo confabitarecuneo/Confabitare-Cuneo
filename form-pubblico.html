@@ -422,18 +422,6 @@ document.addEventListener('DOMContentLoaded',function(){
     d.innerHTML='<span class="chkbox">✓</span><span style="font-size:12px;flex:1;line-height:1.3">'+p.l+'</span><span style="font-family:DM Mono,monospace;font-size:11px;color:var(--accent);font-weight:500">+'+p.p+'</span>';
     g.appendChild(d);
   });
-  // Catastale handler
-  document.getElementById('fileCat').addEventListener('change',function(){
-    if(!this.files[0])return;
-    readF(this.files[0],5,function(b64,name,type){
-      cat={name:name,type:type,base64:b64};
-      var uc=document.getElementById('upCat');
-      uc.classList.remove('err');uc.classList.add('ok');
-      document.getElementById('hintCat').style.display='none';
-      document.getElementById('nameCat').textContent='✓ '+name;
-      document.getElementById('nameCat').style.display='block';
-    });
-  });
   // Init box facoltativo
   addBox();
 });
