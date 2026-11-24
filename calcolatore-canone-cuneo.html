@@ -734,6 +734,11 @@
           <label>Indirizzo</label>
           <input type="text" id="indirizzo" placeholder="Via, numero civico" oninput="aggiornaLinkMappa()">
         </div>
+        <div class="field" id="campoComune" style="display:none">
+          <label>Comune</label>
+          <select id="comune" onchange="onComuneChange()">
+          </select>
+        </div>
         <div class="field">
           <label>Zona di ubicazione</label>
           <select id="zona" onchange="onZoneChange()">
@@ -2173,6 +2178,8 @@ function aggiornaRichieste() {
   scriptGet((err, data) => {
     document.getElementById('richiesteBtn').style.display = 'block';
     document.getElementById('anagraficaBtn').style.display = 'block';
+    // Popola il selettore comune se l'utente ha accesso a più città
+    aggiornaSelettoreComune();
     if (err || !data || !data.ok) {
       setT('richiesteCount', '!');
       return;
@@ -2300,7 +2307,11 @@ function caricaRichiesta(r) {
                     (r.immobile.indirizzo || '').toUpperCase().includes('SALUZZO');
   const isFossano = (r.immobile.citta || '').toUpperCase() === 'FOSSANO' ||
                     (r.immobile.indirizzo || '').toUpperCase().includes('FOSSANO');
-  impostaCitta(isAlba ? 'ALBA' : isSaluzzo ? 'SALUZZO' : isFossano ? 'FOSSANO' : 'CUNEO');
+  const cittaRichiesta = isAlba ? 'ALBA' : isSaluzzo ? 'SALUZZO' : isFossano ? 'FOSSANO' : 'CUNEO';
+  impostaCitta(cittaRichiesta);
+  // Sincronizza il selettore comune se visibile
+  const selectComune = document.getElementById('comune');
+  if (selectComune) selectComune.value = cittaRichiesta;
 
   document.getElementById('proprietario').value = r.proprietario.nome;
   document.getElementById('inquilino').value    = r.inquilino.nome;
@@ -2401,6 +2412,49 @@ function caricaRichiestaById(id) {
   const r = window._richiesteCache && window._richiesteCache[id];
   if (!r) { alert('Richiesta non trovata. Ricarica le richieste.'); return; }
   caricaRichiesta(r);
+}
+
+function aggiornaSelettoreComune() {
+  const campoComune = document.getElementById('campoComune');
+  const selectComune = document.getElementById('comune');
+  if (!campoComune || !selectComune) return;
+
+  // Determina le città accessibili all'utente
+  let cittaDisponibili = [];
+  if (currentUser) {
+    if (currentUser.isAdmin) {
+      cittaDisponibili = ['CUNEO', 'ALBA', 'SALUZZO', 'FOSSANO'];
+    } else if (currentUser.citta && currentUser.citta.length > 1) {
+      cittaDisponibili = currentUser.citta;
+    } else if (currentUser.citta && currentUser.citta.length === 1) {
+      // Utente con una sola città: imposta direttamente, niente dropdown
+      impostaCitta(currentUser.citta[0]);
+      campoComune.style.display = 'none';
+      return;
+    }
+  }
+
+  if (cittaDisponibili.length > 1) {
+    const nomi = { CUNEO: 'Cuneo', ALBA: 'Alba', SALUZZO: 'Saluzzo', FOSSANO: 'Fossano' };
+    selectComune.innerHTML = cittaDisponibili.map(c =>
+      `<option value="${c}">${nomi[c] || c}</option>`
+    ).join('');
+    campoComune.style.display = 'block';
+    // Imposta la prima città come default se CITTA non è già nelle città disponibili
+    if (!cittaDisponibili.includes(CITTA)) {
+      impostaCitta(cittaDisponibili[0]);
+      selectComune.value = cittaDisponibili[0];
+    } else {
+      selectComune.value = CITTA;
+    }
+  } else {
+    campoComune.style.display = 'none';
+  }
+}
+
+function onComuneChange() {
+  const val = document.getElementById('comune').value;
+  if (val) impostaCitta(val);
 }
 
 function impostaCitta(citta) {
