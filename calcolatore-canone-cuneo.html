@@ -606,6 +606,60 @@
   </div>
 </div>
 
+<!-- ANAGRAFICA BUTTON -->
+<div id="anagraficaBtn" style="display:none;position:fixed;bottom:24px;left:24px;z-index:1000">
+  <button onclick="apriAnagrafica()" style="background:#0f172a;color:white;border:none;border-radius:50px;padding:12px 20px;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.3);display:flex;align-items:center;gap:8px">
+    👤 Anagrafica
+  </button>
+</div>
+
+<!-- DRAWER ANAGRAFICA -->
+<div id="anagraficaDrawer" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.4)" onclick="if(event.target===this)chiudiAnagrafica()">
+  <div style="position:absolute;left:0;top:0;bottom:0;width:420px;background:white;overflow-y:auto;padding:24px;box-shadow:4px 0 24px rgba(0,0,0,0.15)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h3 style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700">👤 Anagrafica</h3>
+      <button onclick="chiudiAnagrafica()" style="background:none;border:1px solid #cbd5e1;border-radius:4px;padding:6px 12px;cursor:pointer;font-size:12px">✕ Chiudi</button>
+    </div>
+    <p style="font-size:12px;color:#64748b;margin-bottom:16px">Salva i dati di proprietari e agenzie per recuperarli velocemente nel calcolatore.</p>
+
+    <!-- Form nuovo contatto -->
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-bottom:20px">
+      <div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:600;text-transform:uppercase;color:#64748b;margin-bottom:12px">Nuovo contatto</div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px">Nome / Ragione sociale</label>
+        <input id="ag_nome" type="text" placeholder="Es. Mario Rossi" style="width:100%;border:1px solid #e2e8f0;border-radius:4px;padding:8px 10px;font-size:13px;box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px">Email</label>
+        <input id="ag_email" type="email" placeholder="email@esempio.it" style="width:100%;border:1px solid #e2e8f0;border-radius:4px;padding:8px 10px;font-size:13px;box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px">Telefono</label>
+        <input id="ag_telefono" type="text" placeholder="+39 ..." style="width:100%;border:1px solid #e2e8f0;border-radius:4px;padding:8px 10px;font-size:13px;box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px">Tipo</label>
+        <select id="ag_tipo" style="width:100%;border:1px solid #e2e8f0;border-radius:4px;padding:8px 10px;font-size:13px;box-sizing:border-box">
+          <option value="proprietario">Proprietario</option>
+          <option value="agenzia">Agenzia</option>
+        </select>
+      </div>
+      <div style="margin-bottom:8px">
+        <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px">Note (opzionale)</label>
+        <input id="ag_note" type="text" placeholder="Annotazioni..." style="width:100%;border:1px solid #e2e8f0;border-radius:4px;padding:8px 10px;font-size:13px;box-sizing:border-box">
+      </div>
+      <button onclick="salvaContatto()" style="background:#2563eb;color:white;border:none;border-radius:4px;padding:8px 20px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;text-transform:uppercase;width:100%">+ Salva contatto</button>
+    </div>
+
+    <!-- Lista contatti -->
+    <div>
+      <div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:600;text-transform:uppercase;color:#64748b;margin-bottom:8px">Contatti salvati</div>
+      <input id="ag_cerca" type="text" placeholder="🔍 Cerca..." oninput="renderContatti()" style="width:100%;border:1px solid #e2e8f0;border-radius:4px;padding:8px 10px;font-size:12px;box-sizing:border-box;margin-bottom:12px">
+      <div id="anagraficaList"></div>
+    </div>
+  </div>
+</div>
+
 <!-- RICHIESTE IN ATTESA BADGE -->
 <div id="richiesteBtn" style="display:none;position:fixed;bottom:24px;right:24px;z-index:1000">
   <button onclick="apriRichieste()" style="background:#2563eb;color:white;border:none;border-radius:50px;padding:12px 20px;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;box-shadow:0 4px 16px rgba(37,99,235,0.4);display:flex;align-items:center;gap:8px">
@@ -617,8 +671,12 @@
 <div id="richiesteDrawer" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,0.4)" onclick="if(event.target===this)chiudiRichieste()">
   <div style="position:absolute;right:0;top:0;bottom:0;width:480px;background:white;overflow-y:auto;padding:24px;box-shadow:-4px 0 24px rgba(0,0,0,0.15)">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <h3 style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700">Richieste in Attesa</h3>
+      <h3 style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700">Richieste</h3>
       <button onclick="chiudiRichieste()" style="background:none;border:1px solid #cbd5e1;border-radius:4px;padding:6px 12px;cursor:pointer;font-size:12px">✕ Chiudi</button>
+    </div>
+    <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid #e2e8f0">
+      <button id="tabDaEvadere" onclick="switchTab('in attesa')" style="background:none;border:none;padding:8px 20px;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;border-bottom:2px solid #2563eb;margin-bottom:-2px;color:#2563eb;font-weight:600">Da evadere</button>
+      <button id="tabEvase" onclick="switchTab('elaborata')" style="background:none;border:none;padding:8px 20px;font-family:'DM Mono',monospace;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;color:#94a3b8">Evase</button>
     </div>
     <div id="richiesteList"></div>
   </div>
@@ -954,9 +1012,9 @@
           <tr>
             <th style="width:80px">Micro zone</th>
             <th>Ubicazione</th>
-            <th style="text-align:center">FASCIA MINIMA €/mq<br><span style="font-weight:400;font-size:10px">inferiore a 5 elementi</span></th>
-            <th style="text-align:center">FASCIA MEDIA €/mq<br><span style="font-weight:400;font-size:10px">da 6 a 9 elementi</span></th>
-            <th style="text-align:center">FASCIA MASSIMA €/mq<br><span style="font-weight:400;font-size:10px">oltre 10 elementi</span></th>
+            <th style="text-align:center">FASCIA MINIMA €/mq<br><span style="font-weight:400;font-size:10px">fino a 4,99 elementi</span></th>
+            <th style="text-align:center">FASCIA MEDIA €/mq<br><span style="font-weight:400;font-size:10px">da 5 a 9,99 elementi</span></th>
+            <th style="text-align:center">FASCIA MASSIMA €/mq<br><span style="font-weight:400;font-size:10px">da 10 elementi</span></th>
           </tr>
         </thead>
         <tbody id="printZoneBody"></tbody>
@@ -1054,6 +1112,16 @@ const ZONE_ALBA = {
   6: { desc: "Zona 6 — Frazioni periferiche e zona agricola",    min:[2.40,2.50], osc:[3.22,3.32], max:[4.65,4.75] }
 };
 
+
+// ---- FOSSANO ----
+const ZONE_FOSSANO = {
+  1: { desc: "Zona 1e sub. Zona 4",   min:[3.27,3.37], osc:[4.66,4.76], max:[6.05,6.15] },
+  2: { desc: "Zona 2 e Zona 3",        min:[2.92,3.02], osc:[4.29,4.39], max:[5.65,5.75] },
+  3: { desc: "Zona 4 — Centro storico",min:[3.40,3.50], osc:[4.91,5.01], max:[6.42,6.52] },
+  4: { desc: "Zona 5 — Periferia/agricola", min:[2.69,2.79], osc:[3.99,4.09], max:[5.29,5.39] },
+  5: { desc: "Zona 6 — Frazioni",      min:[2.44,2.54], osc:[3.62,3.72], max:[4.80,4.90] },
+};
+
 // ---- SALUZZO ----
 const ZONE_SALUZZO = {
   1:  { desc: "Microzona 1 — parte a S-O di C.so XXVII Aprile e C.so Roma",          min:[3.65,3.75], osc:[4.85,4.95], max:[6.05,6.15] },
@@ -1074,13 +1142,12 @@ let CITTA = 'CUNEO';
 let ZONE  = ZONE_CUNEO;
 const CANONE_MAX_ALBA    = 600;
 const CANONE_MAX_SALUZZO = 550;
+const CANONE_MAX_FOSSANO  = 550;
 
-// Fascia determinata dal totale elementi (parametri presenti)
-// MINIMA: < 5 | MEDIA: 6–9 | MASSIMA: ≥ 10
-// Nota: il file indica "inferiore a 5", "da 6 a 9", "oltre 10" — il 5 è una zona grigia
+// Fascia: MINIMA <5 | MEDIA 5–9.5 | MASSIMA ≥10
 function getFascia(totalP) {
-  if (totalP < 5)  return 'MINIMA';
-  if (totalP < 10) return 'MEDIA';
+  if (totalP < 5)   return 'MINIMA';
+  if (totalP < 10)  return 'MEDIA';
   return 'MASSIMA';
 }
 
@@ -1172,9 +1239,12 @@ function aggiornaVisibilitaAutorimesse() {
     ['rowGar2','rowPCop2','rowPSco2'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display = show2 ? '' : 'none'; });
     ['rowGarOther','rowPCopOther','rowPScoOther'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display = showOther ? '' : 'none'; });
   } else if (CITTA === 'SALUZZO') {
-    // Saluzzo: zona 1 → gar zona1 (0.60); altre zone → garOther (0.50); comune sempre visibile
     const show1 = zona === 1, showOther = zona >= 2;
     const el1 = document.getElementById('rowGar1'); if(el1) el1.style.display = show1 ? '' : 'none';
+    const elOther = document.getElementById('rowGarOther'); if(elOther) elOther.style.display = showOther ? '' : 'none';
+  } else if (CITTA === 'FOSSANO') {
+    const show4 = zona === 4, showOther = zona !== 4;
+    const el4 = document.getElementById('rowGar4'); if(el4) el4.style.display = show4 ? '' : 'none';
     const elOther = document.getElementById('rowGarOther'); if(elOther) elOther.style.display = showOther ? '' : 'none';
   } else {
     // Cuneo
@@ -1254,6 +1324,13 @@ function calc() {
     garTot = gar1 + garOther + garCom;
     const setR = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=fmt(v); };
     setR('resGar1',gar1); setR('resGarOther',garOther); setR('resGarCom',garCom);
+  } else if (CITTA === 'FOSSANO') {
+    const gar4     = getV('supGar4')     * 0.70;
+    const garOther = getV('supGarOther') * 0.50;
+    const garCom   = getV('supGarCom')   * 0.30;
+    garTot = gar4 + garOther + garCom;
+    const setR = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=fmt(v); };
+    setR('resGar4',gar4); setR('resGarOther',garOther); setR('resGarCom',garCom);
   } else {
     const gar12    = getV('supGar12')    * 0.7;
     const gar345   = getV('supGar345')   * 0.6;
@@ -1411,6 +1488,8 @@ function computeResult() {
       + getV('supPSco1')*0.35 + getV('supPSco2')*0.30 + getV('supPScoOther')*0.25;
   } else if (CITTA === 'SALUZZO') {
     garTot2 = getV('supGar1')*0.60 + getV('supGarOther')*0.50 + getV('supGarCom')*0.20;
+  } else if (CITTA === 'FOSSANO') {
+    garTot2 = getV('supGar4')*0.70 + getV('supGarOther')*0.50 + getV('supGarCom')*0.30;
   } else {
     garTot2 = getV('supGar12')*0.7 + getV('supGar345')*0.6 + getV('supGarOther')*0.5 + getV('supGarCom')*0.2;
   }
@@ -1445,6 +1524,10 @@ function computeResult() {
   if (CITTA === 'SALUZZO' && canoneFin > CANONE_MAX_SALUZZO) {
     canoneFin = CANONE_MAX_SALUZZO;
     noteTetto = ` ⚠️ Tetto massimo Saluzzo: €${CANONE_MAX_SALUZZO}/mese applicato`;
+  }
+  if (CITTA === 'FOSSANO' && canoneFin > CANONE_MAX_FOSSANO) {
+    canoneFin = CANONE_MAX_FOSSANO;
+    noteTetto = ` ⚠️ Tetto massimo Fossano: €${CANONE_MAX_FOSSANO}/mese applicato`;
   }
 
   const fasciaColor = fascia === 'MINIMA' ? '#6ee7b7' : fascia === 'MEDIA' ? '#fbbf24' : '#fca5a5';
@@ -1693,8 +1776,8 @@ function scaricaPDFInternal(doc) {
   // Logo
   doc.addImage('data:image/jpeg;base64,' + LOGO_B64, 'JPEG', 14, 6, 50, 15);
   // Testo a destra del logo — città dinamica
-  const nomeComune = CITTA === 'ALBA' ? 'Alba' : CITTA === 'SALUZZO' ? 'Saluzzo' : 'Cuneo';
-  const dataAccordo = CITTA === 'ALBA' ? '01/05/2026' : CITTA === 'SALUZZO' ? '01/05/2026' : '01/03/2026';
+  const nomeComune = CITTA === 'ALBA' ? 'Alba' : CITTA === 'SALUZZO' ? 'Saluzzo' : CITTA === 'FOSSANO' ? 'Fossano' : 'Cuneo';
+  const dataAccordo = CITTA === 'ALBA' ? '01/05/2026' : CITTA === 'SALUZZO' ? '01/05/2026' : CITTA === 'FOSSANO' ? '01/05/2026' : '01/03/2026';
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(11); doc.setFont('helvetica', 'bold');
   doc.text('Calcolo ' + nomeComune + ' — Canone Concordato', W - 14, 11, { align: 'right' });
@@ -2020,7 +2103,7 @@ function goStep(n) {
 const USERS = {
   'admin':       { pw: 'canone2026', citta: null,             nome: 'Admin',               isAdmin: true  },
   'confabitare': { pw: 'cuneo2026',  citta: ['CUNEO','ALBA'], nome: 'Operatore Cuneo/Alba', isAdmin: false },
-  'Saluzzo':     { pw: 'ConSZ26',    citta: ['SALUZZO'],      nome: 'Operatore Saluzzo',    isAdmin: false },
+  'Saluzzo':     { pw: 'ConSZ26',    citta: ['SALUZZO','FOSSANO'], nome: 'Operatore Saluzzo/Fossano', isAdmin: false },
 };
 let currentUser = null;
 
@@ -2089,6 +2172,7 @@ function scriptGet(callback) {
 function aggiornaRichieste() {
   scriptGet((err, data) => {
     document.getElementById('richiesteBtn').style.display = 'block';
+    document.getElementById('anagraficaBtn').style.display = 'block';
     if (err || !data || !data.ok) {
       setT('richiesteCount', '!');
       return;
@@ -2100,7 +2184,31 @@ function aggiornaRichieste() {
   });
 }
 
+let _tabAttivo = 'in attesa';
+
+function switchTab(stato) {
+  _tabAttivo = stato;
+  const tabDa = document.getElementById('tabDaEvadere');
+  const tabEv = document.getElementById('tabEvase');
+  if (stato === 'in attesa') {
+    tabDa.style.borderBottomColor = '#2563eb'; tabDa.style.color = '#2563eb'; tabDa.style.fontWeight = '600';
+    tabEv.style.borderBottomColor = 'transparent'; tabEv.style.color = '#94a3b8'; tabEv.style.fontWeight = 'normal';
+  } else {
+    tabEv.style.borderBottomColor = '#2563eb'; tabEv.style.color = '#2563eb'; tabEv.style.fontWeight = '600';
+    tabDa.style.borderBottomColor = 'transparent'; tabDa.style.color = '#94a3b8'; tabDa.style.fontWeight = 'normal';
+  }
+  const list = document.getElementById('richiesteList');
+  if (window._richiesteAll) renderRichieste(list, window._richiesteAll, window._richiesteFromCache);
+}
+
 function apriRichieste() {
+  _tabAttivo = 'in attesa';
+  // Reimposta tab visivamente
+  const tabDa = document.getElementById('tabDaEvadere');
+  const tabEv = document.getElementById('tabEvase');
+  if (tabDa) { tabDa.style.borderBottomColor = '#2563eb'; tabDa.style.color = '#2563eb'; tabDa.style.fontWeight = '600'; }
+  if (tabEv) { tabEv.style.borderBottomColor = 'transparent'; tabEv.style.color = '#94a3b8'; tabEv.style.fontWeight = 'normal'; }
+
   document.getElementById('richiesteDrawer').style.display = 'block';
   const list = document.getElementById('richiesteList');
   list.innerHTML = '<p style="color:#64748b;font-size:13px;text-align:center;padding:32px 0">Caricamento...</p>';
@@ -2111,7 +2219,9 @@ function apriRichieste() {
       const cached = localStorage.getItem('cf_richieste_cache');
       if (cached) {
         try {
-          renderRichieste(list, JSON.parse(cached), true);
+          window._richiesteAll = JSON.parse(cached);
+          window._richiesteFromCache = true;
+          renderRichieste(list, window._richiesteAll, true);
           return;
         } catch(e) {}
       }
@@ -2125,7 +2235,9 @@ function apriRichieste() {
       return;
     }
     if (!data.fromCache) localStorage.setItem('cf_richieste_cache', JSON.stringify(data.richieste));
-    renderRichieste(list, data.richieste || [], false);
+    window._richiesteAll = data.richieste || [];
+    window._richiesteFromCache = false;
+    renderRichieste(list, window._richiesteAll, false);
   });
 }
 
@@ -2138,8 +2250,13 @@ function renderRichieste(list, richieste, fromCache) {
     });
   }
 
+  // Filtra per tab attivo
+  const statoFiltro = _tabAttivo || 'in attesa';
+  richieste = richieste.filter(r => (r.stato || 'in attesa') === statoFiltro);
+
   if (richieste.length === 0) {
-    list.innerHTML = '<p style="color:#64748b;font-size:13px;text-align:center;padding:32px 0">Nessuna richiesta ricevuta</p>';
+    const msg = statoFiltro === 'in attesa' ? 'Nessuna richiesta da evadere' : 'Nessuna richiesta evasa';
+    list.innerHTML = `<p style="color:#64748b;font-size:13px;text-align:center;padding:32px 0">${msg}</p>`;
     return;
   }
 
@@ -2167,6 +2284,7 @@ function renderRichieste(list, richieste, fromCache) {
       </div>
       <button onclick="caricaRichiestaById('${r.id}')" style="background:#1a2332;color:white;border:none;border-radius:4px;padding:7px 14px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;text-transform:uppercase">Carica nel calcolatore →</button>
       <button onclick="copiaEmail('${r.id}')" style="background:none;border:1px solid #86efac;color:#166534;border-radius:4px;padding:7px 14px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;margin-left:6px">📧 Copia messaggio</button>
+      ${r.stato === 'elaborata' ? `<button onclick="riaprireRichiesta('${r.id}')" style="background:none;border:1px solid #93c5fd;color:#1d4ed8;border-radius:4px;padding:7px 14px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;margin-left:6px">✏️ Modifica</button>` : ''}
       <button onclick="eliminaRichiesta('${r.id}')" style="background:none;border:1px solid #fca5a5;color:#dc2626;border-radius:4px;padding:7px 14px;font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;margin-left:6px">Elimina</button>
     </div>
   `).join('');
@@ -2180,7 +2298,9 @@ function caricaRichiesta(r) {
                  (r.immobile.indirizzo || '').toUpperCase().includes('ALBA');
   const isSaluzzo = (r.immobile.citta || '').toUpperCase() === 'SALUZZO' ||
                     (r.immobile.indirizzo || '').toUpperCase().includes('SALUZZO');
-  impostaCitta(isAlba ? 'ALBA' : isSaluzzo ? 'SALUZZO' : 'CUNEO');
+  const isFossano = (r.immobile.citta || '').toUpperCase() === 'FOSSANO' ||
+                    (r.immobile.indirizzo || '').toUpperCase().includes('FOSSANO');
+  impostaCitta(isAlba ? 'ALBA' : isSaluzzo ? 'SALUZZO' : isFossano ? 'FOSSANO' : 'CUNEO');
 
   document.getElementById('proprietario').value = r.proprietario.nome;
   document.getElementById('inquilino').value    = r.inquilino.nome;
@@ -2285,7 +2405,7 @@ function caricaRichiestaById(id) {
 
 function impostaCitta(citta) {
   CITTA = citta;
-  ZONE  = citta === 'ALBA' ? ZONE_ALBA : citta === 'SALUZZO' ? ZONE_SALUZZO : ZONE_CUNEO;
+  ZONE  = citta === 'ALBA' ? ZONE_ALBA : citta === 'SALUZZO' ? ZONE_SALUZZO : citta === 'FOSSANO' ? ZONE_FOSSANO : ZONE_CUNEO;
 
   // Badge città
   let badge = document.getElementById('cittaBadge');
@@ -2298,6 +2418,7 @@ function impostaCitta(citta) {
   const badgeColors = {
     ALBA:    {bg:'#fef3c7', color:'#92400e', border:'#fde68a'},
     SALUZZO: {bg:'#f3e8ff', color:'#6b21a8', border:'#d8b4fe'},
+    FOSSANO: {bg:'#fce7f3', color:'#9d174d', border:'#f9a8d4'},
     CUNEO:   {bg:'#dbeafe', color:'#1e40af', border:'#93c5fd'},
   };
   const bc = badgeColors[citta] || badgeColors.CUNEO;
@@ -2309,7 +2430,7 @@ function impostaCitta(citta) {
   // Aggiorna select zona con descrizioni
   const zonaEl = document.getElementById('zona');
   if (zonaEl) {
-    const nZone = citta === 'ALBA' ? 6 : citta === 'SALUZZO' ? 11 : 8;
+    const nZone = citta === 'ALBA' ? 6 : citta === 'SALUZZO' ? 11 : citta === 'FOSSANO' ? 5 : 8;
     zonaEl.innerHTML = '<option value="">— Seleziona zona —</option>';
     for (let i = 1; i <= nZone; i++) {
       const desc = ZONE[i] ? ZONE[i].desc : 'Zona ' + i;
@@ -2366,6 +2487,14 @@ function aggiornaTabellaSuperifici(citta) {
   }
 }
 
+function riaprireRichiesta(id) {
+  if (!confirm('Vuoi riaprire questa richiesta per modificarla?\nVerrà rimessa nello stato "Da evadere".')) return;
+  // Ricarica nel calcolatore
+  caricaRichiestaById(id);
+  // Riporta lo stato a "in attesa" sul server
+  scriptPost({ action: 'aggiorna', id, stato: 'in attesa' }, () => aggiornaRichieste());
+}
+
 function eliminaRichiesta(id) {
   if (!confirm('Eliminare questa richiesta?')) return;
   scriptPost({ action: 'elimina', id }, () => { aggiornaRichieste(); apriRichieste(); });
@@ -2373,6 +2502,100 @@ function eliminaRichiesta(id) {
 
 function chiudiRichieste() {
   document.getElementById('richiesteDrawer').style.display = 'none';
+}
+
+// ============================================================
+// ANAGRAFICA
+// ============================================================
+const CF_ANAGRAFICA_KEY = 'cf_anagrafica';
+
+function getContatti() {
+  try { return JSON.parse(localStorage.getItem(CF_ANAGRAFICA_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+
+function salvaContatto() {
+  const nome = document.getElementById('ag_nome').value.trim();
+  const email = document.getElementById('ag_email').value.trim();
+  const telefono = document.getElementById('ag_telefono').value.trim();
+  const tipo = document.getElementById('ag_tipo').value;
+  const note = document.getElementById('ag_note').value.trim();
+  if (!nome) { alert('Inserisci il nome/ragione sociale'); return; }
+  const contatti = getContatti();
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  contatti.push({ id, nome, email, telefono, tipo, note });
+  localStorage.setItem(CF_ANAGRAFICA_KEY, JSON.stringify(contatti));
+  // Reset form
+  ['ag_nome','ag_email','ag_telefono','ag_note'].forEach(f => document.getElementById(f).value = '');
+  document.getElementById('ag_tipo').value = 'proprietario';
+  renderContatti();
+}
+
+function eliminaContatto(id) {
+  if (!confirm('Eliminare questo contatto?')) return;
+  const contatti = getContatti().filter(c => c.id !== id);
+  localStorage.setItem(CF_ANAGRAFICA_KEY, JSON.stringify(contatti));
+  renderContatti();
+}
+
+// Buffer contatto selezionato (usato al momento dell'invio richiesta)
+window._contattoSelezionato = null;
+
+function usaContatto(id) {
+  const c = getContatti().find(c => c.id === id);
+  if (!c) return;
+  // Compila il campo proprietario nel form
+  const propField = document.getElementById('proprietario');
+  if (propField) propField.value = c.nome;
+  // Salva in buffer globale per utilizzo al momento invio (email, agenzia)
+  window._contattoSelezionato = c;
+  chiudiAnagrafica();
+  // Piccolo feedback visivo
+  if (propField) {
+    propField.style.outline = '2px solid #2563eb';
+    setTimeout(() => { propField.style.outline = ''; }, 1500);
+  }
+}
+
+function renderContatti() {
+  const list = document.getElementById('anagraficaList');
+  if (!list) return;
+  const cerca = (document.getElementById('ag_cerca')?.value || '').toLowerCase();
+  let contatti = getContatti();
+  if (cerca) contatti = contatti.filter(c => c.nome.toLowerCase().includes(cerca) || (c.email||'').toLowerCase().includes(cerca));
+  if (contatti.length === 0) {
+    list.innerHTML = '<p style="color:#94a3b8;font-size:12px;text-align:center;padding:24px 0">Nessun contatto salvato</p>';
+    return;
+  }
+  list.innerHTML = contatti.map(c => `
+    <div style="border:1px solid #e2e8f0;border-radius:6px;padding:12px;margin-bottom:8px;background:#fff">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.nome}</div>
+          <div style="font-size:11px;color:#64748b;margin-top:2px">
+            <span style="display:inline-block;background:${c.tipo==='agenzia'?'#dbeafe':'#f0fdf4'};color:${c.tipo==='agenzia'?'#1d4ed8':'#15803d'};border-radius:3px;padding:1px 6px;font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase">${c.tipo}</span>
+          </div>
+          ${c.email ? `<div style="font-size:11px;color:#475569;margin-top:4px">✉ ${c.email}</div>` : ''}
+          ${c.telefono ? `<div style="font-size:11px;color:#475569;margin-top:2px">📞 ${c.telefono}</div>` : ''}
+          ${c.note ? `<div style="font-size:11px;color:#94a3b8;margin-top:2px;font-style:italic">${c.note}</div>` : ''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+          <button onclick="usaContatto('${c.id}')" style="background:#2563eb;color:white;border:none;border-radius:4px;padding:5px 10px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;white-space:nowrap">↗ Usa</button>
+          ${c.email ? `<button onclick="navigator.clipboard.writeText('${c.email.replace(/'/g,"\\'")}').then(()=>alert('Email copiata!'))" style="background:none;border:1px solid #e2e8f0;color:#475569;border-radius:4px;padding:5px 10px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;white-space:nowrap">📋 Email</button>` : ''}
+          <button onclick="eliminaContatto('${c.id}')" style="background:none;border:1px solid #fca5a5;color:#dc2626;border-radius:4px;padding:5px 10px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;white-space:nowrap">🗑 Elimina</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function apriAnagrafica() {
+  document.getElementById('anagraficaDrawer').style.display = 'block';
+  renderContatti();
+}
+
+function chiudiAnagrafica() {
+  document.getElementById('anagraficaDrawer').style.display = 'none';
 }
 
 window.addEventListener('load', () => {
