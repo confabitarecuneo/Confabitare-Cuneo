@@ -1248,8 +1248,8 @@ function aggiornaVisibilitaAutorimesse() {
     const el1 = document.getElementById('rowGar1'); if(el1) el1.style.display = show1 ? '' : 'none';
     const elOther = document.getElementById('rowGarOther'); if(elOther) elOther.style.display = showOther ? '' : 'none';
   } else if (CITTA === 'FOSSANO') {
-    const show4 = zona === 4, showOther = zona !== 4;
-    const el4 = document.getElementById('rowGar4'); if(el4) el4.style.display = show4 ? '' : 'none';
+    const show3 = zona === 3, showOther = zona !== 3;
+    const el3 = document.getElementById('rowGar3'); if(el3) el3.style.display = show3 ? '' : 'none';
     const elOther = document.getElementById('rowGarOther'); if(elOther) elOther.style.display = showOther ? '' : 'none';
   } else {
     // Cuneo
@@ -1330,12 +1330,12 @@ function calc() {
     const setR = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=fmt(v); };
     setR('resGar1',gar1); setR('resGarOther',garOther); setR('resGarCom',garCom);
   } else if (CITTA === 'FOSSANO') {
-    const gar4     = getV('supGar4')     * 0.70;
+    const gar3     = getV('supGar3')     * 0.70;
     const garOther = getV('supGarOther') * 0.50;
     const garCom   = getV('supGarCom')   * 0.30;
-    garTot = gar4 + garOther + garCom;
+    garTot = gar3 + garOther + garCom;
     const setR = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=fmt(v); };
-    setR('resGar4',gar4); setR('resGarOther',garOther); setR('resGarCom',garCom);
+    setR('resGar3',gar3); setR('resGarOther',garOther); setR('resGarCom',garCom);
   } else {
     const gar12    = getV('supGar12')    * 0.7;
     const gar345   = getV('supGar345')   * 0.6;
@@ -1494,7 +1494,7 @@ function computeResult() {
   } else if (CITTA === 'SALUZZO') {
     garTot2 = getV('supGar1')*0.60 + getV('supGarOther')*0.50 + getV('supGarCom')*0.20;
   } else if (CITTA === 'FOSSANO') {
-    garTot2 = getV('supGar4')*0.70 + getV('supGarOther')*0.50 + getV('supGarCom')*0.30;
+    garTot2 = getV('supGar3')*0.70 + getV('supGarOther')*0.50 + getV('supGarCom')*0.30;
   } else {
     garTot2 = getV('supGar12')*0.7 + getV('supGar345')*0.6 + getV('supGarOther')*0.5 + getV('supGarCom')*0.2;
   }
@@ -2533,7 +2533,7 @@ function aggiornaTabellaSuperifici(citta) {
       ${righeComuni}`;
   } else if (citta === 'FOSSANO') {
     tbody.innerHTML = `
-      <tr id="rowGar4"><td>Autorimessa singola (Zona 4)</td><td style="text-align:center"><span class="coeff">0.70</span></td><td><input type="number" id="supGar4" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGar4" style="text-align:right">0.00</td></tr>
+      <tr id="rowGar3"><td>Autorimessa singola (Zona 3 — Centro storico)</td><td style="text-align:center"><span class="coeff">0.70</span></td><td><input type="number" id="supGar3" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGar3" style="text-align:right">0.00</td></tr>
       <tr id="rowGarOther"><td>Autorimessa singola (altre zone)</td><td style="text-align:center"><span class="coeff">0.50</span></td><td><input type="number" id="supGarOther" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGarOther" style="text-align:right">0.00</td></tr>
       <tr id="rowGarCom"><td>Autorimessa comune</td><td style="text-align:center"><span class="coeff">0.30</span></td><td><input type="number" id="supGarCom" min="0" step="0.01" placeholder="0.00" oninput="calc()"></td><td id="resGarCom" style="text-align:right">0.00</td></tr>
       ${righeComuni}`;
